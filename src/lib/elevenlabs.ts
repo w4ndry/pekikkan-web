@@ -3,7 +3,7 @@ export class ElevenLabsService {
   private baseUrl = 'https://api.elevenlabs.io/v1';
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
+    this.apiKey = 'sk_9434f9229a52611b8c9ccd3360821866419ce2f595fc164a';
   }
 
   private isConfigured(): boolean {
