@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MobileLayout } from '../components/Layout/MobileLayout';
 import { BottomNavigation } from '../components/Layout/BottomNavigation';
-import { QuoteCard } from '../components/Quote/QuoteCard';
+import { QuoteStack } from '../components/Quote/QuoteStack';
 import { MetaTags } from '../components/SEO/MetaTags';
 import { useQuotes } from '../hooks/useQuotes';
 import { useSEO } from '../hooks/useSEO';
@@ -10,6 +10,8 @@ import { analytics } from '../utils/analytics';
 
 export const Home: React.FC = () => {
   const {
+    quotes,
+    currentIndex,
     currentQuote,
     loading,
     likeQuote,
@@ -75,7 +77,7 @@ export const Home: React.FC = () => {
     );
   }
 
-  if (!currentQuote) {
+  if (!quotes.length) {
     return (
       <>
         <MetaTags {...seoData} />
@@ -96,9 +98,10 @@ export const Home: React.FC = () => {
     <>
       <MetaTags {...seoData} />
       <MobileLayout>
-        <div className="h-screen pb-20">
-          <QuoteCard
-            quote={currentQuote}
+        <div className="h-screen pb-20 overflow-hidden">
+          <QuoteStack
+            quotes={quotes}
+            currentIndex={currentIndex}
             onLike={handleLike}
             onSave={handleSave}
             onReport={handleReport}
