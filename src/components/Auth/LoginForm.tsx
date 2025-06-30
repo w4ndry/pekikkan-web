@@ -39,8 +39,8 @@ export const LoginForm: React.FC = () => {
       setLoading(true);
       await signIn(email.trim(), password);
     } catch (error) {
-      // Error is handled in the context with toast
-      console.error('Login error:', error);
+      // Error is handled in the AuthContext with toast notifications
+      // No need to log to console for expected authentication failures
     } finally {
       setLoading(false);
     }

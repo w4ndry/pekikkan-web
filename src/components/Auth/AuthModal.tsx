@@ -152,7 +152,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode: ini
         await handleSuccessfulSignup(email.trim());
       }
     } catch (error) {
-      console.error('Auth error:', error);
+      // Error is handled in the AuthContext with toast notifications
+      // No need to log to console for expected authentication failures
     } finally {
       setLoading(false);
     }
