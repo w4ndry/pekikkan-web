@@ -49,11 +49,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, userData: { username: string; full_name: string }) => {
     try {
+      // Check if username is already taken
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', userData.username)
+        .single();
+
+      if (existingUser) {
+        throw new Error('Username is already taken');
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: userData,
+          data: {
+            username: userData.username,
+            full_name: userData.full_name,
+          },
         },
       });
 
@@ -72,31 +86,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
-          throw new Error('Failed to create user profile');
+          // If profile creation fails, we should clean up the auth user
+          await supabase.auth.signOut();
+          throw new Error('Failed to create user profile. Please try again.');
         }
       }
       
-      toast.success('Account created successfully!');
+      toast.success('Account created successfully! Please check your email to confirm your account.');
     } catch (error) {
       const authError = error as AuthError;
-      toast.error(authError.message || 'Failed to create account');
+      let errorMessage = 'Failed to create account';
+      
+      if (authError.message?.includes('User already registered')) {
+        errorMessage = 'An account with this email already exists';
+      } else if (authError.message?.includes('Password should be at least')) {
+        errorMessage = 'Password should be at least 6 characters long';
+      } else if (authError.message?.includes('Username is already taken')) {
+        errorMessage = 'Username is already taken';
+      } else if (authError.message) {
+        errorMessage = authError.message;
+      }
+      
+      toast.error(errorMessage);
       throw error;
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
       
+      // Check if user profile exists in our users table
+      if (data.user) {
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError && profileError.code === 'PGRST116') {
+          // User profile doesn't exist, create it from auth metadata
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email!,
+              username: data.user.user_metadata?.username || data.user.email!.split('@')[0],
+              full_name: data.user.user_metadata?.full_name || '',
+            });
+
+          if (insertError) {
+            console.error('Failed to create user profile:', insertError);
+          }
+        }
+      }
+      
       toast.success('Signed in successfully!');
     } catch (error) {
       const authError = error as AuthError;
-      toast.error(authError.message || 'Failed to sign in');
+      let errorMessage = 'Failed to sign in';
+      
+      if (authError.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (authError.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the confirmation link before signing in.';
+      } else if (authError.message?.includes('Too many requests')) {
+        errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+      } else if (authError.message) {
+        errorMessage = authError.message;
+      }
+      
+      toast.error(errorMessage);
       throw error;
     }
   };
