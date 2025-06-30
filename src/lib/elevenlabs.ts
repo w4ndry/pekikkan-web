@@ -49,6 +49,7 @@ export class ElevenLabsService {
   }
 
   async playQuote(content: string, author: string): Promise<void> {
+    console.log("this.apiKey", this.apiKey)
     if (!this.isConfigured()) {
       throw new Error('Text-to-speech is not available. ElevenLabs API key is not configured.');
     }
