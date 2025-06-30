@@ -14,7 +14,7 @@ interface ReportModalProps {
 }
 
 interface FormErrors {
-  description?: string;
+  reason?: string;
   general?: string;
 }
 
@@ -25,7 +25,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   quoteContent,
   quoteAuthor,
 }) => {
-  const [description, setDescription] = useState('');
+  const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
@@ -34,7 +34,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setDescription('');
+      setReason('');
       setErrors({});
       setShowSuccess(false);
     }
@@ -56,13 +56,13 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Validate description
-    if (!description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (description.trim().length < 20) {
-      newErrors.description = 'Description must be at least 20 characters long';
-    } else if (description.trim().length > 500) {
-      newErrors.description = 'Description must not exceed 500 characters';
+    // Validate reason
+    if (!reason.trim()) {
+      newErrors.reason = 'Reason is required';
+    } else if (reason.trim().length < 20) {
+      newErrors.reason = 'Reason must be at least 20 characters long';
+    } else if (reason.trim().length > 500) {
+      newErrors.reason = 'Reason must not exceed 500 characters';
     }
 
     setErrors(newErrors);
@@ -92,11 +92,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 
       // Check if user has already reported this quote
       const { data: existingReport } = await supabase
-        .from('interactions')
+        .from('quote_reports')
         .select('id')
         .eq('user_id', user.id)
         .eq('quote_id', quoteId)
-        .eq('type', 'report')
         .single();
 
       if (existingReport) {
@@ -105,8 +104,20 @@ export const ReportModal: React.FC<ReportModalProps> = ({
         return;
       }
 
-      // Submit the report
+      // Submit the report to the new quote_reports table
       const { error: reportError } = await supabase
+        .from('quote_reports')
+        .insert({
+          user_id: user.id,
+          quote_id: quoteId,
+          reason: reason.trim(),
+          status: 'pending'
+        });
+
+      if (reportError) throw reportError;
+
+      // Also create an interaction record for backward compatibility
+      const { error: interactionError } = await supabase
         .from('interactions')
         .insert({
           user_id: user.id,
@@ -114,7 +125,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           type: 'report'
         });
 
-      if (reportError) throw reportError;
+      // Don't fail if interaction insert fails (it might already exist)
+      if (interactionError && !interactionError.message?.includes('duplicate')) {
+        console.warn('Failed to create interaction record:', interactionError);
+      }
 
       setShowSuccess(true);
       
@@ -136,18 +150,18 @@ export const ReportModal: React.FC<ReportModalProps> = ({
     onClose();
   };
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleReasonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-    setDescription(value);
+    setReason(value);
     
-    // Clear description error when user starts typing
-    if (errors.description && value.trim().length >= 20) {
-      setErrors(prev => ({ ...prev, description: undefined }));
+    // Clear reason error when user starts typing
+    if (errors.reason && value.trim().length >= 20) {
+      setErrors(prev => ({ ...prev, reason: undefined }));
     }
   };
 
-  const remainingChars = 500 - description.length;
-  const isDescriptionValid = description.trim().length >= 20 && description.trim().length <= 500;
+  const remainingChars = 500 - reason.length;
+  const isReasonValid = reason.trim().length >= 20 && reason.trim().length <= 500;
 
   return (
     <AnimatePresence>
@@ -234,20 +248,20 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                 {/* Form */}
                 {!showSuccess && (
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Description Field */}
+                    {/* Reason Field */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Reason for reporting
                       </label>
                       <div className="relative">
                         <textarea
-                          value={description}
-                          onChange={handleDescriptionChange}
-                          placeholder="Please explain why you're reporting this quote (inappropriate content, spam, harassment, etc.)"
+                          value={reason}
+                          onChange={handleReasonChange}
+                          placeholder="Please explain why you're reporting this quote (inappropriate content, spam, harassment, copyright violation, etc.)"
                           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-sm ${
-                            errors.description 
+                            errors.reason 
                               ? 'border-red-300 bg-red-50' 
-                              : isDescriptionValid 
+                              : isReasonValid 
                                 ? 'border-green-300 bg-green-50' 
                                 : 'border-gray-300'
                           }`}
@@ -258,20 +272,20 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                         
                         {/* Character Counter */}
                         <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-                          <span className={description.length > 480 ? 'text-red-500' : ''}>
-                            {description.length}/500
+                          <span className={reason.length > 480 ? 'text-red-500' : ''}>
+                            {reason.length}/500
                           </span>
                         </div>
                       </div>
                       
-                      {/* Description Help Text */}
+                      {/* Reason Help Text */}
                       <div className="mt-1 text-xs text-gray-500">
                         Minimum 20 characters. Remaining: {remainingChars}
                       </div>
                       
-                      {/* Description Error */}
+                      {/* Reason Error */}
                       <AnimatePresence>
-                        {errors.description && (
+                        {errors.reason && (
                           <motion.div
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -279,7 +293,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                             className="mt-1 flex items-center gap-1 text-red-600 text-sm"
                           >
                             <AlertCircle size={12} />
-                            <span>{errors.description}</span>
+                            <span>{errors.reason}</span>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -299,7 +313,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                       
                       <motion.button
                         type="submit"
-                        disabled={loading || !isDescriptionValid}
+                        disabled={loading || !isReasonValid}
                         className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm"
                         whileTap={{ scale: 0.98 }}
                       >

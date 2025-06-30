@@ -41,3 +41,16 @@ export interface Follow {
   following_id: string;
   created_at: string;
 }
+
+export interface QuoteReport {
+  id: string;
+  quote_id: string;
+  user_id: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
+  quote?: Quote;
+  user?: UserProfile;
+}
