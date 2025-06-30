@@ -91,12 +91,17 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       setLoading(true);
 
       // Check if user has already reported this quote
-      const { data: existingReport } = await supabase
+      const { data: existingReport, error: checkError } = await supabase
         .from('quote_reports')
         .select('id')
         .eq('user_id', user.id)
         .eq('quote_id', quoteId)
-        .single();
+        .maybeSingle();
+
+      // Handle the check error properly - PGRST116 means no rows found, which is fine
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
 
       if (existingReport) {
         setErrors({ general: 'You have already reported this quote' });
@@ -117,16 +122,20 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       if (reportError) throw reportError;
 
       // Also create an interaction record for backward compatibility
+      // Use upsert to handle potential duplicates gracefully
       const { error: interactionError } = await supabase
         .from('interactions')
-        .insert({
+        .upsert({
           user_id: user.id,
           quote_id: quoteId,
           type: 'report'
+        }, {
+          onConflict: 'user_id,quote_id,type',
+          ignoreDuplicates: true
         });
 
-      // Don't fail if interaction insert fails (it might already exist)
-      if (interactionError && !interactionError.message?.includes('duplicate')) {
+      // Don't fail if interaction insert fails
+      if (interactionError) {
         console.warn('Failed to create interaction record:', interactionError);
       }
 
@@ -325,7 +334,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                         ) : (
                           'Send Report'
                         )}
-                      </motion.button>
+                      </button>
                     </div>
                   </form>
                 )}
