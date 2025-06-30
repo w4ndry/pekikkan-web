@@ -124,7 +124,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
         >
           <div className="text-center space-y-6">
             <p className="text-2xl text-gray-800 font-lato italic leading-relaxed">
-              {quote.content}
+              "{quote.content}"
             </p>
             <p className="text-lg text-gray-600 font-inter font-medium">
               — {quote.author}
