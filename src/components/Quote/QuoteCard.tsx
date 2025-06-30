@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, PanInfo } from 'framer-motion';
-import { Heart, Bookmark, Share2, Flag, Volume2, User, UserPlus } from 'lucide-react';
+import { Heart, Bookmark, Flag, Volume2, User, UserPlus } from 'lucide-react';
 import { Quote } from '../../types';
 import { elevenLabsService } from '../../lib/elevenlabs';
 import { useAuth } from '../../contexts/AuthContext';
@@ -56,30 +56,6 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
       toast.error('Failed to play quote. Please check your API key.');
     } finally {
       setIsPlaying(false);
-    }
-  };
-
-  const handleShare = async () => {
-    const text = `"${quote.content}" - ${quote.author}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Inspirational Quote',
-          text,
-          url: window.location.href,
-        });
-      } catch (error) {
-        // User cancelled sharing or error occurred
-      }
-    } else {
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(text);
-        toast.success('Quote copied to clipboard!');
-      } catch (error) {
-        toast.error('Failed to copy quote');
-      }
     }
   };
 
@@ -188,14 +164,6 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
             whileTap={{ scale: 0.9 }}
           >
             <Volume2 size={24} />
-          </motion.button>
-
-          <motion.button
-            onClick={handleShare}
-            className="w-14 h-14 rounded-full bg-white text-primary flex items-center justify-center shadow-md"
-            whileTap={{ scale: 0.9 }}
-          >
-            <Share2 size={24} />
           </motion.button>
         </div>
 

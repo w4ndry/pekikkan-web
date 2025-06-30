@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Bookmark, Share2, Flag, Volume2, User } from 'lucide-react';
+import { X, Heart, Bookmark, Flag, Volume2, User } from 'lucide-react';
 import { Quote } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthModal } from '../Auth/AuthModal';
@@ -83,30 +83,6 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
     }
   };
 
-  const handleShare = async () => {
-    const text = `"${quote.content}" - ${quote.author}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Inspirational Quote',
-          text,
-          url: window.location.href,
-        });
-      } catch (error) {
-        // User cancelled sharing or error occurred
-      }
-    } else {
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(text);
-        toast.success('Quote copied to clipboard!');
-      } catch (error) {
-        toast.error('Failed to copy quote');
-      }
-    }
-  };
-
   return (
     <>
       <AnimatePresence>
@@ -185,14 +161,6 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                           whileTap={{ scale: 0.9 }}
                         >
                           <Volume2 size={20} />
-                        </motion.button>
-
-                        <motion.button
-                          onClick={handleShare}
-                          className="w-12 h-12 min-[480px]:w-14 min-[480px]:h-14 rounded-full bg-white text-primary flex items-center justify-center shadow-md"
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Share2 size={20} />
                         </motion.button>
                       </div>
 
