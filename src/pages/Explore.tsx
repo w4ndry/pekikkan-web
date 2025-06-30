@@ -266,7 +266,7 @@ export const Explore: React.FC = () => {
             />
           </div>
           
-          <div className="pb-4">
+          <div className="pb-8">
             {renderContent()}
           </div>
         </div>
