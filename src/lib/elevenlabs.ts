@@ -93,6 +93,7 @@ export class ElevenLabsService {
 
   // Check if the service is properly configured
   getStatus(): { configured: boolean; message: string } {
+    console.log("this.apiKey", this.apiKey)
     if (!this.isConfigured()) {
       return {
         configured: false,
