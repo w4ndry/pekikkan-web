@@ -15,14 +15,17 @@ interface PerformanceMetrics {
 
 class Analytics {
   private isInitialized = false;
+  private measurementId = 'G-LYC8GQ1NZK';
 
-  init(measurementId: string) {
+  init(measurementId?: string) {
     if (typeof window === 'undefined' || this.isInitialized) return;
+
+    const gaId = measurementId || this.measurementId;
 
     // Load Google Analytics
     const script = document.createElement('script');
     script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
     document.head.appendChild(script);
 
     // Initialize gtag
@@ -30,25 +33,46 @@ class Analytics {
       (window.gtag.q = window.gtag.q || []).push(arguments);
     };
     window.gtag('js', new Date());
-    window.gtag('config', measurementId, {
+    window.gtag('config', gaId, {
       page_title: document.title,
       page_location: window.location.href,
+      custom_map: {
+        'custom_parameter_1': 'quote_author',
+        'custom_parameter_2': 'quote_category'
+      }
+    });
+
+    // Set up enhanced ecommerce for quote interactions
+    window.gtag('config', gaId, {
+      send_page_view: false,
+      anonymize_ip: true,
+      allow_google_signals: true,
+      allow_ad_personalization_signals: false
     });
 
     this.isInitialized = true;
+    console.log(`Google Analytics initialized with ID: ${gaId}`);
   }
 
-  // Track page views
+  // Track page views with enhanced data
   trackPageView(path: string, title?: string) {
     if (typeof window === 'undefined' || !window.gtag) return;
 
-    window.gtag('config', 'GA_MEASUREMENT_ID', {
+    window.gtag('config', this.measurementId, {
       page_path: path,
       page_title: title || document.title,
+      page_location: window.location.href,
+    });
+
+    // Send page view event
+    window.gtag('event', 'page_view', {
+      page_title: title || document.title,
+      page_location: window.location.href,
+      page_path: path,
     });
   }
 
-  // Track custom events
+  // Track custom events with enhanced parameters
   trackEvent({ action, category, label, value }: AnalyticsEvent) {
     if (typeof window === 'undefined' || !window.gtag) return;
 
@@ -56,19 +80,37 @@ class Analytics {
       event_category: category,
       event_label: label,
       value: value,
+      custom_parameter_1: label, // For quote author tracking
+      send_to: this.measurementId
     });
   }
 
-  // Track quote interactions
+  // Track quote interactions with detailed analytics
   trackQuoteInteraction(action: 'like' | 'save' | 'share' | 'report', quoteId: string, author: string) {
     this.trackEvent({
-      action,
+      action: `quote_${action}`,
       category: 'Quote Interaction',
       label: `${author} - ${quoteId}`,
     });
+
+    // Enhanced ecommerce tracking for quote engagement
+    window.gtag('event', 'select_content', {
+      content_type: 'quote',
+      content_id: quoteId,
+      custom_parameter_1: author,
+      custom_parameter_2: action,
+    });
+
+    // Track author popularity
+    window.gtag('event', 'author_interaction', {
+      event_category: 'Author Engagement',
+      event_label: author,
+      custom_parameter_1: author,
+      value: action === 'like' ? 2 : action === 'save' ? 3 : 1
+    });
   }
 
-  // Track search queries
+  // Track search queries with enhanced data
   trackSearch(query: string, resultsCount: number) {
     this.trackEvent({
       action: 'search',
@@ -76,13 +118,76 @@ class Analytics {
       label: query,
       value: resultsCount,
     });
+
+    // Enhanced search tracking
+    window.gtag('event', 'search', {
+      search_term: query,
+      search_results: resultsCount,
+      content_type: 'quotes'
+    });
   }
 
-  // Track user engagement
+  // Track user engagement with conversion tracking
   trackEngagement(action: 'signup' | 'login' | 'post_quote' | 'profile_view') {
     this.trackEvent({
       action,
       category: 'User Engagement',
+    });
+
+    // Track as conversions for important actions
+    if (action === 'signup') {
+      window.gtag('event', 'sign_up', {
+        method: 'email',
+        event_category: 'User Engagement'
+      });
+    } else if (action === 'post_quote') {
+      window.gtag('event', 'share', {
+        method: 'quote_post',
+        content_type: 'quote',
+        event_category: 'Content Creation'
+      });
+    }
+  }
+
+  // Track category interactions
+  trackCategoryView(categoryName: string, quotesCount: number) {
+    this.trackEvent({
+      action: 'view_category',
+      category: 'Content Discovery',
+      label: categoryName,
+      value: quotesCount
+    });
+
+    window.gtag('event', 'view_item_list', {
+      item_list_name: categoryName,
+      item_list_id: categoryName.toLowerCase().replace(/\s+/g, '_'),
+      items: [{
+        item_id: categoryName,
+        item_name: `${categoryName} Quotes`,
+        item_category: 'Quote Category',
+        quantity: quotesCount
+      }]
+    });
+  }
+
+  // Track author page views
+  trackAuthorView(authorName: string, quotesCount: number) {
+    this.trackEvent({
+      action: 'view_author',
+      category: 'Author Discovery',
+      label: authorName,
+      value: quotesCount
+    });
+
+    window.gtag('event', 'view_item_list', {
+      item_list_name: `${authorName} Quotes`,
+      item_list_id: authorName.toLowerCase().replace(/\s+/g, '_'),
+      items: [{
+        item_id: authorName,
+        item_name: authorName,
+        item_category: 'Author',
+        quantity: quotesCount
+      }]
     });
   }
 
@@ -207,10 +312,43 @@ class Analytics {
       value: Math.round(metric.value),
     });
 
+    // Send as custom event for detailed analysis
+    window.gtag('event', 'web_vitals', {
+      metric_name: metric.name,
+      metric_value: Math.round(metric.value),
+      metric_rating: metric.rating,
+      event_category: 'Performance'
+    });
+
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(`${metric.name}: ${metric.value} (${metric.rating})`);
     }
+  }
+
+  // Track user journey and session data
+  trackUserJourney(step: string, data?: Record<string, any>) {
+    window.gtag('event', 'user_journey', {
+      journey_step: step,
+      event_category: 'User Journey',
+      ...data
+    });
+  }
+
+  // Track quote sharing
+  trackQuoteShare(quoteId: string, author: string, method: string) {
+    this.trackEvent({
+      action: 'share_quote',
+      category: 'Social Sharing',
+      label: `${author} - ${method}`,
+    });
+
+    window.gtag('event', 'share', {
+      method: method,
+      content_type: 'quote',
+      content_id: quoteId,
+      custom_parameter_1: author
+    });
   }
 }
 

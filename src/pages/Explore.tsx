@@ -55,6 +55,7 @@ export const Explore: React.FC = () => {
   useEffect(() => {
     // Track page view
     analytics.trackPageView(location.pathname, 'Explore - Discover Quotes');
+    analytics.trackUserJourney('explore_page_view');
   }, [location.pathname]);
 
   useEffect(() => {
@@ -71,6 +72,11 @@ export const Explore: React.FC = () => {
       category: 'Quote Interaction',
       label: `${quote.author} - ${quote.id}`,
     });
+    analytics.trackUserJourney('quote_modal_open', {
+      quote_id: quote.id,
+      author: quote.author,
+      source: viewMode
+    });
   };
 
   const handleCategoryClick = async (category: Category) => {
@@ -78,15 +84,18 @@ export const Explore: React.FC = () => {
     setCurrentCategory(category);
     setViewMode('category');
     
-    analytics.trackEvent({
-      action: 'view_category',
-      category: 'Navigation',
-      label: category.name,
+    analytics.trackCategoryView(category.name, 0);
+    analytics.trackUserJourney('category_view', {
+      category: category.name,
+      keywords: category.keywords
     });
     
     const quotes = await getQuotesByCategory(category);
     setCategoryQuotes(quotes);
     setCategoryLoading(false);
+
+    // Update analytics with actual quote count
+    analytics.trackCategoryView(category.name, quotes.length);
   };
 
   const handleAuthorClick = async (author: PopularAuthor) => {
@@ -94,10 +103,11 @@ export const Explore: React.FC = () => {
     setCurrentAuthor(author);
     setViewMode('author');
     
-    analytics.trackEvent({
-      action: 'view_author',
-      category: 'Navigation',
-      label: author.author,
+    analytics.trackAuthorView(author.author, author.quote_count);
+    analytics.trackUserJourney('author_view', {
+      author: author.author,
+      quote_count: author.quote_count,
+      total_likes: author.total_likes
     });
     
     const quotes = await getQuotesByAuthor(author.author);
@@ -112,12 +122,15 @@ export const Explore: React.FC = () => {
     setCategoryQuotes([]);
     setAuthorQuotes([]);
     setSearchQuery('');
+    
+    analytics.trackUserJourney('back_to_explore_main');
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.trim()) {
       setViewMode('search');
+      analytics.trackUserJourney('search_initiated', { query: value });
     } else {
       setViewMode('main');
     }
@@ -304,7 +317,10 @@ export const Explore: React.FC = () => {
         <QuoteModal
           quote={selectedQuote}
           isOpen={!!selectedQuote}
-          onClose={() => setSelectedQuote(null)}
+          onClose={() => {
+            setSelectedQuote(null);
+            analytics.trackUserJourney('quote_modal_close');
+          }}
           onLike={handleLike}
           onSave={handleSave}
           onReport={handleReport}

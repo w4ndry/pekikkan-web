@@ -15,16 +15,31 @@ import { analytics } from './utils/analytics';
 
 function App() {
   useEffect(() => {
-    // Initialize analytics
-    if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
-      analytics.init(import.meta.env.VITE_GA_MEASUREMENT_ID);
-    }
+    // Initialize analytics with your measurement ID
+    const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-LYC8GQ1NZK';
+    analytics.init(measurementId);
 
     // Track performance metrics
     analytics.trackPerformance();
 
     // Track initial page load
-    analytics.trackPageView(window.location.pathname);
+    analytics.trackPageView(window.location.pathname, 'Pekikkan - Inspire the world through words');
+
+    // Track user journey start
+    analytics.trackUserJourney('app_start', {
+      timestamp: new Date().toISOString(),
+      user_agent: navigator.userAgent,
+      screen_resolution: `${screen.width}x${screen.height}`,
+      viewport_size: `${window.innerWidth}x${window.innerHeight}`
+    });
+
+    // Track session start
+    analytics.trackEvent({
+      action: 'session_start',
+      category: 'User Engagement',
+      label: 'App Launch'
+    });
+
   }, []);
 
   return (
