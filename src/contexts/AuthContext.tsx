@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('users')
         .select('username')
         .eq('username', userData.username)
-        .single();
+        .maybeSingle();
 
       if (existingUser) {
         throw new Error('Username is already taken');
