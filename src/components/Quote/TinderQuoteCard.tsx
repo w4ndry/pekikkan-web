@@ -401,7 +401,7 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
           <p className="text-xs text-gray-400">
             Swipe left for previous • Swipe right for next • Tap to go next
           </p>
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* Modals */}
