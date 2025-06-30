@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MobileLayout } from '../components/Layout/MobileLayout';
 import { BottomNavigation } from '../components/Layout/BottomNavigation';
-import { QuoteStack } from '../components/Quote/QuoteStack';
+import { TinderQuoteCard } from '../components/Quote/TinderQuoteCard';
 import { MetaTags } from '../components/SEO/MetaTags';
 import { useQuotes } from '../hooks/useQuotes';
 import { useSEO } from '../hooks/useSEO';
@@ -99,7 +99,7 @@ export const Home: React.FC = () => {
       <MetaTags {...seoData} />
       <MobileLayout>
         <div className="h-screen pb-20 overflow-hidden">
-          <QuoteStack
+          <TinderQuoteCard
             quotes={quotes}
             currentIndex={currentIndex}
             onLike={handleLike}
