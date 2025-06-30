@@ -8,6 +8,9 @@ export const Home: React.FC = () => {
   const {
     currentQuote,
     loading,
+    likeQuote,
+    saveQuote,
+    reportQuote,
     nextQuote,
     previousQuote,
   } = useQuotes();
@@ -44,6 +47,9 @@ export const Home: React.FC = () => {
       <div className="h-screen pb-20">
         <QuoteCard
           quote={currentQuote}
+          onLike={likeQuote}
+          onSave={saveQuote}
+          onReport={reportQuote}
           onNext={nextQuote}
           onPrevious={previousQuote}
         />
