@@ -18,9 +18,9 @@ interface MetaTagsProps {
 }
 
 export const MetaTags: React.FC<MetaTagsProps> = ({
-  title = 'Pekikkan - Inspirational Quotes & Wisdom',
-  description = 'Discover, share, and save inspirational quotes from great minds. Join our community of quote lovers and find daily motivation.',
-  keywords = ['inspirational quotes', 'motivation', 'wisdom', 'daily inspiration', 'famous quotes', 'life quotes'],
+  title = 'Pekikkan - Inspire the world through words',
+  description = 'Inspire the world through words. Discover, share, and save powerful quotes that motivate and transform lives. Join our community of word enthusiasts spreading inspiration globally.',
+  keywords = ['inspire through words', 'inspirational quotes', 'motivational words', 'powerful quotes', 'life-changing quotes', 'daily inspiration', 'word wisdom'],
   image = '/og-image.jpg',
   url = 'https://pekikkan.com',
   type = 'website',
@@ -50,7 +50,8 @@ export const MetaTags: React.FC<MetaTagsProps> = ({
       'publisher': {
         '@type': 'Organization',
         'name': 'Pekikkan',
-        'url': 'https://pekikkan.com'
+        'url': 'https://pekikkan.com',
+        'slogan': 'Inspire the world through words'
       }
     };
   };
@@ -60,8 +61,9 @@ export const MetaTags: React.FC<MetaTagsProps> = ({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     'name': 'Pekikkan',
-    'description': 'Inspirational Quotes & Wisdom Community',
+    'description': 'Inspire the world through words - Inspirational Quotes & Word Wisdom Community',
     'url': 'https://pekikkan.com',
+    'slogan': 'Inspire the world through words',
     'potentialAction': {
       '@type': 'SearchAction',
       'target': 'https://pekikkan.com/explore?q={search_term_string}',

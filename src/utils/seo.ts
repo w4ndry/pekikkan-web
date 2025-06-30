@@ -30,7 +30,10 @@ export const generateKeywords = (text: string, additionalKeywords: string[] = []
     .slice(0, 5)
     .map(([word]) => word);
 
-  return [...new Set([...additionalKeywords, ...topWords])];
+  // Always include core brand keywords
+  const coreKeywords = ['inspire through words', 'inspirational quotes', 'motivational words', 'powerful quotes'];
+  
+  return [...new Set([...coreKeywords, ...additionalKeywords, ...topWords])];
 };
 
 export const generateSlug = (text: string): string => {
@@ -53,7 +56,7 @@ export const generateOpenGraphImage = (quote: string, author: string): string =>
   const encodedQuote = encodeURIComponent(quote.substring(0, 100));
   const encodedAuthor = encodeURIComponent(author);
   
-  return `https://pekikkan.com/api/og?quote=${encodedQuote}&author=${encodedAuthor}`;
+  return `https://pekikkan.com/api/og?quote=${encodedQuote}&author=${encodedAuthor}&title=Inspire%20the%20world%20through%20words`;
 };
 
 export const extractTextFromHTML = (html: string): string => {
@@ -69,7 +72,7 @@ export const calculateReadingTime = (text: string, wordsPerMinute: number = 200)
 
 export const generateBreadcrumbs = (pathname: string) => {
   const paths = pathname.split('/').filter(Boolean);
-  const breadcrumbs = [{ name: 'Home', href: '/' }];
+  const breadcrumbs = [{ name: 'Inspire the world through words', href: '/' }];
 
   let currentPath = '';
   paths.forEach((path, index) => {

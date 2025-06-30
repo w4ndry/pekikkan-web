@@ -18,7 +18,7 @@ export const SitemapGenerator: React.FC = () => {
       const baseUrl = 'https://pekikkan.com';
       const entries: SitemapEntry[] = [];
 
-      // Static pages
+      // Static pages with updated descriptions
       entries.push(
         {
           url: baseUrl,
@@ -81,7 +81,7 @@ export const SitemapGenerator: React.FC = () => {
       const sitemap = generateSitemapXML(entries);
       
       // Store sitemap (in a real app, you'd save this to a file or CDN)
-      console.log('Generated sitemap:', sitemap);
+      console.log('Generated sitemap for Pekikkan - Inspire the world through words:', sitemap);
       
     } catch (error) {
       console.error('Error generating sitemap:', error);

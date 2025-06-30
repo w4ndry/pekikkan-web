@@ -13,7 +13,7 @@ Disallow: /api/private/
 Disallow: /_next/
 Disallow: /static/
 
-# Allow important pages
+# Allow important pages for inspiring through words
 Allow: /
 Allow: /explore
 Allow: /quote/*
@@ -23,3 +23,7 @@ Allow: /category/*
 # Block search result pages with parameters
 Disallow: /*?*
 Allow: /explore?q=*
+
+# Additional information
+# Website: Pekikkan - Inspire the world through words
+# Description: Discover, share, and save powerful quotes that motivate and transform lives
