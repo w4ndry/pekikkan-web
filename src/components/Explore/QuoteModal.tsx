@@ -30,9 +30,18 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   const [localQuote, setLocalQuote] = useState<Quote | null>(null);
   const { user } = useAuth();
 
-  // Update local quote state when quote prop changes
+  // Update local quote state when quote prop changes and preserve interaction states
   useEffect(() => {
-    setLocalQuote(quote);
+    if (quote) {
+      setLocalQuote({
+        ...quote,
+        // Ensure interaction states are properly preserved
+        isLiked: quote.isLiked || false,
+        isSaved: quote.isSaved || false,
+      });
+    } else {
+      setLocalQuote(null);
+    }
   }, [quote]);
 
   // Prevent background scrolling when modal is open

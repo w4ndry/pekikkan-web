@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Quote, UserProfile } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export interface TrendingQuote extends Quote {
@@ -74,6 +75,40 @@ export const useExplore = () => {
   ]);
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const { user } = useAuth();
+
+  const addUserInteractions = async (quotes: any[]): Promise<Quote[]> => {
+    if (!user || !quotes.length) {
+      return quotes.map(quote => ({
+        ...quote,
+        isLiked: false,
+        isSaved: false,
+      }));
+    }
+
+    try {
+      // Get user interactions for these quotes
+      const quoteIds = quotes.map(q => q.id);
+      const { data: interactions } = await supabase
+        .from('interactions')
+        .select('quote_id, type')
+        .eq('user_id', user.id)
+        .in('quote_id', quoteIds);
+
+      return quotes.map(quote => ({
+        ...quote,
+        isLiked: interactions?.some(i => i.quote_id === quote.id && i.type === 'like') || false,
+        isSaved: interactions?.some(i => i.quote_id === quote.id && i.type === 'save') || false,
+      }));
+    } catch (error) {
+      console.error('Error fetching user interactions:', error);
+      return quotes.map(quote => ({
+        ...quote,
+        isLiked: false,
+        isSaved: false,
+      }));
+    }
+  };
 
   const fetchTrendingQuotes = async () => {
     try {
@@ -92,20 +127,24 @@ export const useExplore = () => {
 
       if (error) throw error;
 
-      // Calculate trending score based on likes, saves, and recency
-      const trendingQuotes = quotes?.map(quote => {
-        const daysSinceCreated = Math.max(1, Math.floor((Date.now() - new Date(quote.created_at).getTime()) / (1000 * 60 * 60 * 24)));
-        const trending_score = (quote.like_count * 2 + quote.save_count * 3) / daysSinceCreated;
-        
-        return {
-          ...quote,
-          trending_score,
-          isLiked: false,
-          isSaved: false,
-        };
-      }).sort((a, b) => b.trending_score - a.trending_score) || [];
+      if (quotes) {
+        // Calculate trending score based on likes, saves, and recency
+        const quotesWithScore = quotes.map(quote => {
+          const daysSinceCreated = Math.max(1, Math.floor((Date.now() - new Date(quote.created_at).getTime()) / (1000 * 60 * 60 * 24)));
+          const trending_score = (quote.like_count * 2 + quote.save_count * 3) / daysSinceCreated;
+          
+          return {
+            ...quote,
+            trending_score,
+          };
+        }).sort((a, b) => b.trending_score - a.trending_score);
 
-      setTrendingQuotes(trendingQuotes);
+        // Add user interactions
+        const quotesWithInteractions = await addUserInteractions(quotesWithScore);
+        setTrendingQuotes(quotesWithInteractions);
+      } else {
+        setTrendingQuotes([]);
+      }
     } catch (error) {
       console.error('Error fetching trending quotes:', error);
       toast.error('Failed to load trending quotes');
@@ -209,13 +248,9 @@ export const useExplore = () => {
 
       if (error) throw error;
 
-      const quotesWithDefaults = quotes?.map(quote => ({
-        ...quote,
-        isLiked: false,
-        isSaved: false,
-      })) || [];
-
-      setSearchResults(quotesWithDefaults);
+      // Add user interactions
+      const quotesWithInteractions = await addUserInteractions(quotes || []);
+      setSearchResults(quotesWithInteractions);
     } catch (error) {
       console.error('Error searching quotes:', error);
       toast.error('Failed to search quotes');
@@ -241,11 +276,8 @@ export const useExplore = () => {
 
       if (error) throw error;
 
-      return quotes?.map(quote => ({
-        ...quote,
-        isLiked: false,
-        isSaved: false,
-      })) || [];
+      // Add user interactions
+      return await addUserInteractions(quotes || []);
     } catch (error) {
       console.error('Error fetching category quotes:', error);
       toast.error(`Failed to load ${category.name} quotes`);
@@ -267,11 +299,8 @@ export const useExplore = () => {
 
       if (error) throw error;
 
-      return quotes?.map(quote => ({
-        ...quote,
-        isLiked: false,
-        isSaved: false,
-      })) || [];
+      // Add user interactions
+      return await addUserInteractions(quotes || []);
     } catch (error) {
       console.error('Error fetching author quotes:', error);
       toast.error(`Failed to load quotes by ${authorName}`);
@@ -282,7 +311,7 @@ export const useExplore = () => {
   useEffect(() => {
     fetchTrendingQuotes();
     fetchPopularAuthors();
-  }, []);
+  }, [user]); // Re-fetch when user changes to get proper interaction states
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -290,7 +319,7 @@ export const useExplore = () => {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, user]); // Re-search when user changes
 
   return {
     searchQuery,
