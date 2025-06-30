@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MobileLayout } from '../components/Layout/MobileLayout';
 import { BottomNavigation } from '../components/Layout/BottomNavigation';
-import { TinderQuoteCard } from '../components/Quote/TinderQuoteCard';
+import { EnhancedTinderQuoteCard } from '../components/Quote/EnhancedTinderQuoteCard';
 import { MetaTags } from '../components/SEO/MetaTags';
 import { useQuotes } from '../hooks/useQuotes';
 import { useSEO } from '../hooks/useSEO';
@@ -17,8 +17,6 @@ export const Home: React.FC = () => {
     likeQuote,
     saveQuote,
     reportQuote,
-    nextQuote,
-    previousQuote,
   } = useQuotes();
   
   const location = useLocation();
@@ -61,6 +59,18 @@ export const Home: React.FC = () => {
     }
   };
 
+  const handleIndexChange = (index: number) => {
+    const quote = quotes[index];
+    if (quote) {
+      analytics.trackEvent({
+        action: 'navigate_to_quote',
+        category: 'Navigation',
+        label: `${quote.author} - ${quote.id}`,
+        value: index,
+      });
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -99,14 +109,13 @@ export const Home: React.FC = () => {
       <MetaTags {...seoData} />
       <MobileLayout>
         <div className="h-screen pb-20 overflow-hidden">
-          <TinderQuoteCard
+          <EnhancedTinderQuoteCard
             quotes={quotes}
-            currentIndex={currentIndex}
+            initialIndex={currentIndex}
             onLike={handleLike}
             onSave={handleSave}
             onReport={handleReport}
-            onNext={nextQuote}
-            onPrevious={previousQuote}
+            onIndexChange={handleIndexChange}
           />
         </div>
         <BottomNavigation />
