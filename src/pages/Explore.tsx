@@ -252,7 +252,7 @@ export const Explore: React.FC = () => {
 
   return (
     <MobileLayout>
-      <div className="h-screen pb-20 bg-gray-50">
+      <div className="h-screen bg-gray-50">
         <div className="p-4">
           <div className="mb-6">
             {viewMode === 'main' && (
@@ -266,7 +266,7 @@ export const Explore: React.FC = () => {
             />
           </div>
           
-          <div className="pb-8">
+          <div className="pb-24">
             {renderContent()}
           </div>
         </div>
