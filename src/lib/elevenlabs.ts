@@ -85,7 +85,7 @@ export class ElevenLabsService {
         });
       });
     } catch (error) {
-      console.error('Error playing quote:', this.apiKey);
+      console.error('Error playing quoteas:', this.apiKey);
       throw error;
     }
   }
