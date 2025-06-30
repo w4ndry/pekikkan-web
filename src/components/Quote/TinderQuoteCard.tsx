@@ -38,22 +38,21 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
   const [showReportModal, setShowReportModal] = useState(false);
   const [authAction, setAuthAction] = useState<'like' | 'save' | 'report' | null>(null);
   const [currentQuoteId, setCurrentQuoteId] = useState<string>('');
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   
   const { user } = useAuth();
   const currentIndexRef = useRef(currentIndex);
+  const childRefs = useRef<any[]>([]);
 
   // Update ref when currentIndex changes
   React.useEffect(() => {
     currentIndexRef.current = currentIndex;
   }, [currentIndex]);
 
-  // Get visible cards for rendering
+  // Get visible cards for rendering (show current and next 2 cards)
   const visibleCards = useMemo(() => {
     const cards = [];
-    const startIndex = Math.max(0, currentIndex - 1);
-    const endIndex = Math.min(quotes.length - 1, currentIndex + 2);
-    
-    for (let i = startIndex; i <= endIndex; i++) {
+    for (let i = currentIndex; i < Math.min(currentIndex + 3, quotes.length); i++) {
       if (quotes[i]) {
         cards.push({
           quote: quotes[i],
@@ -61,27 +60,40 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
         });
       }
     }
-    return cards.reverse(); // Reverse for proper stacking
+    return cards.reverse(); // Reverse for proper stacking (last card on top)
   }, [quotes, currentIndex]);
 
   const currentQuote = quotes[currentIndex];
 
   const handleSwipe = useCallback((direction: string, index: number) => {
+    console.log(`Swiped ${direction} on card ${index}`);
     setLastDirection(direction);
+    setSwipeDirection(direction as 'left' | 'right');
     
-    // Add smooth transition delay
-    setTimeout(() => {
-      if (direction === 'left') {
-        onPrevious();
-      } else if (direction === 'right') {
-        onNext();
-      }
-    }, 100);
-  }, [onNext, onPrevious]);
+    // Only handle swipe if it's the current active card
+    if (index === currentIndex) {
+      // Add smooth transition delay
+      setTimeout(() => {
+        if (direction === 'left') {
+          // Left swipe = previous quote
+          onPrevious();
+        } else if (direction === 'right') {
+          // Right swipe = next quote
+          onNext();
+        }
+        setSwipeDirection(null);
+      }, 100);
+    }
+  }, [currentIndex, onNext, onPrevious]);
 
   const handleCardLeftScreen = useCallback((direction: string, index: number) => {
     console.log(`Card ${index} left screen in direction: ${direction}`);
   }, []);
+
+  const handleTap = useCallback(() => {
+    // Tap = go to next quote
+    onNext();
+  }, [onNext]);
 
   const handlePlay = async () => {
     if (isPlaying || !currentQuote) return;
@@ -147,6 +159,19 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
     setLastDirection('');
   };
 
+  // Programmatic swipe functions
+  const swipeLeft = () => {
+    if (childRefs.current[currentIndex]) {
+      childRefs.current[currentIndex].swipe('left');
+    }
+  };
+
+  const swipeRight = () => {
+    if (childRefs.current[currentIndex]) {
+      childRefs.current[currentIndex].swipe('right');
+    }
+  };
+
   if (!currentQuote) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -189,11 +214,14 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
             return (
               <TinderCard
                 key={`${quote.id}-${index}`}
+                ref={(el) => (childRefs.current[index] = el)}
                 onSwipe={(dir) => handleSwipe(dir, index)}
                 onCardLeftScreen={(dir) => handleCardLeftScreen(dir, index)}
                 preventSwipe={!isActive ? ['up', 'down', 'left', 'right'] : ['up', 'down']}
                 swipeThreshold={SWIPE_THRESHOLD}
                 className="absolute inset-0"
+                swipeRequirementType="position"
+                flickOnSwipe={true}
               >
                 <motion.div
                   className="w-full h-full bg-white rounded-3xl shadow-lg p-8 cursor-pointer select-none"
@@ -215,6 +243,7 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
                   }}
                   whileHover={isActive ? { scale: 1.02 } : {}}
                   whileTap={isActive ? { scale: 0.98 } : {}}
+                  onClick={isActive ? handleTap : undefined}
                 >
                   <div className="text-center space-y-6 h-full flex flex-col justify-center">
                     <motion.p 
@@ -237,11 +266,11 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
                   </div>
 
                   {/* Swipe Indicators */}
-                  <div className="absolute top-4 left-4 text-green-500 opacity-0 transform rotate-12 text-4xl font-bold pointer-events-none swipe-right-indicator">
-                    LIKE
+                  <div className={`absolute top-4 left-4 text-green-500 opacity-0 transform rotate-12 text-4xl font-bold pointer-events-none transition-all duration-200 ${swipeDirection === 'right' ? 'opacity-100 scale-110' : ''}`}>
+                    NEXT
                   </div>
-                  <div className="absolute top-4 right-4 text-red-500 opacity-0 transform -rotate-12 text-4xl font-bold pointer-events-none swipe-left-indicator">
-                    PASS
+                  <div className={`absolute top-4 right-4 text-blue-500 opacity-0 transform -rotate-12 text-4xl font-bold pointer-events-none transition-all duration-200 ${swipeDirection === 'left' ? 'opacity-100 scale-110' : ''}`}>
+                    PREV
                   </div>
                 </motion.div>
               </TinderCard>
@@ -259,6 +288,15 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
       >
         {/* Primary Action Buttons */}
         <div className="flex justify-center gap-4 mb-6">
+          <motion.button
+            onClick={swipeLeft}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg bg-blue-500 text-white hover:bg-blue-600 transition-all duration-200"
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }}
+          >
+            <span className="text-sm font-bold">←</span>
+          </motion.button>
+
           <motion.button
             onClick={() => requireAuth('like', currentQuote.id, () => onLike(currentQuote.id))}
             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
@@ -286,6 +324,15 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
             }}
           >
             <Volume2 size={24} />
+          </motion.button>
+
+          <motion.button
+            onClick={swipeRight}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg bg-green-500 text-white hover:bg-green-600 transition-all duration-200"
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }}
+          >
+            <span className="text-sm font-bold">→</span>
           </motion.button>
 
           {lastDirection && (
@@ -352,9 +399,9 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
           transition={{ delay: 0.7 }}
         >
           <p className="text-xs text-gray-400">
-            Swipe right to like • Swipe left to pass • Tap to go next
+            Swipe left for previous • Swipe right for next • Tap to go next
           </p>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Modals */}
@@ -379,27 +426,6 @@ export const TinderQuoteCard: React.FC<TinderQuoteCardProps> = ({
         quoteContent={currentQuote.content}
         quoteAuthor={currentQuote.author}
       />
-
-      {/* Custom CSS for swipe indicators */}
-      <style jsx>{`
-        .swipe-right-indicator {
-          transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-        }
-        .swipe-left-indicator {
-          transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-        }
-        
-        /* Show indicators during swipe */
-        [data-swipe-direction="right"] .swipe-right-indicator {
-          opacity: 1 !important;
-          transform: rotate(12deg) scale(1.1) !important;
-        }
-        
-        [data-swipe-direction="left"] .swipe-left-indicator {
-          opacity: 1 !important;
-          transform: rotate(-12deg) scale(1.1) !important;
-        }
-      `}</style>
     </div>
   );
 };
