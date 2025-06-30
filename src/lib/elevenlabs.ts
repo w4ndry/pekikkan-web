@@ -3,7 +3,7 @@ export class ElevenLabsService {
   private baseUrl = 'https://api.elevenlabs.io/v1';
 
   constructor() {
-    this.apiKey = 'sk_9434f9229a52611b8c9ccd3360821866419ce2f595fc164a';
+    this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
   }
 
   private isConfigured(): boolean {
@@ -49,7 +49,6 @@ export class ElevenLabsService {
   }
 
   async playQuote(content: string, author: string): Promise<void> {
-    console.log("this.apiKey", this.apiKey)
     if (!this.isConfigured()) {
       throw new Error('Text-to-speech is not available. ElevenLabs API key is not configured.');
     }
@@ -86,14 +85,13 @@ export class ElevenLabsService {
         });
       });
     } catch (error) {
-      console.error('Error playing quote:', error);
+      console.error('Error playing quote:', this.apiKey, error);
       throw error;
     }
   }
 
   // Check if the service is properly configured
   getStatus(): { configured: boolean; message: string } {
-    console.log("this.apiKey", this.apiKey)
     if (!this.isConfigured()) {
       return {
         configured: false,
