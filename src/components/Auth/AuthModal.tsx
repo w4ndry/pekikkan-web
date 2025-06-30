@@ -152,8 +152,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode: ini
         await handleSuccessfulSignup(email.trim());
       }
     } catch (error) {
-      // Error is handled in the AuthContext with toast notifications
-      // No need to log to console for expected authentication failures
+      // For seamless auth flow, only show errors if this is an explicit auth attempt
+      // (not when triggered by requiring auth for an action)
+      const authError = error as Error;
+      
+      if (mode === 'login') {
+        // For login errors, show user-friendly messages
+        if (authError.message?.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (authError.message?.includes('Email not confirmed')) {
+          setError('Please check your email and click the confirmation link before signing in.');
+        } else if (authError.message?.includes('Too many requests')) {
+          setError('Too many login attempts. Please wait a moment and try again.');
+        } else {
+          setError('Failed to sign in. Please try again.');
+        }
+      } else {
+        // For signup errors
+        if (authError.message?.includes('User already registered')) {
+          setError('An account with this email already exists');
+        } else if (authError.message?.includes('Username is already taken')) {
+          setError('Username is already taken');
+        } else {
+          setError('Failed to create account. Please try again.');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -194,7 +217,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode: ini
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" data-auth-modal>
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}

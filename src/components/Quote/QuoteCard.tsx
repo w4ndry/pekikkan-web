@@ -200,7 +200,10 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
 
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => {
+          setShowAuthModal(false);
+          setAuthAction(null);
+        }}
         mode="login"
         onSuccess={handleAuthSuccess}
       />

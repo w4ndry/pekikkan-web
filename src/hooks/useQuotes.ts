@@ -59,7 +59,7 @@ export const useQuotes = () => {
 
   const likeQuote = async (quoteId: string) => {
     if (!user) {
-      toast.error('Please sign in to like quotes');
+      // Silently fail - auth modal will be handled by the component
       return;
     }
 
@@ -114,7 +114,7 @@ export const useQuotes = () => {
 
   const saveQuote = async (quoteId: string) => {
     if (!user) {
-      toast.error('Please sign in to save quotes');
+      // Silently fail - auth modal will be handled by the component
       return;
     }
 
@@ -171,7 +171,7 @@ export const useQuotes = () => {
 
   const reportQuote = async (quoteId: string) => {
     if (!user) {
-      toast.error('Please sign in to report quotes');
+      // Silently fail - auth modal will be handled by the component
       return;
     }
 

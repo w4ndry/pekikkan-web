@@ -161,7 +161,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         errorMessage = authError.message;
       }
       
-      toast.error(errorMessage);
+      // Only show error toast if this is not a silent auth attempt
+      // (when user is trying to perform an action that requires auth)
+      const isFromAuthModal = document.querySelector('[data-auth-modal]');
+      if (isFromAuthModal) {
+        toast.error(errorMessage);
+      }
+      
       throw error;
     }
   };
