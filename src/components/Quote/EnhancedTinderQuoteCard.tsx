@@ -1,13 +1,11 @@
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import TinderCard from 'react-tinder-card';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Bookmark, Flag, Volume2, User, UserPlus } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { Heart, Bookmark, Flag, Volume2, User, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Quote } from '../../types';
 import { elevenLabsService } from '../../lib/elevenlabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthModal } from '../Auth/AuthModal';
 import { ReportModal } from '../Report/ReportModal';
-import { NavigationControls } from './NavigationControls';
 import { useCardNavigation } from '../../hooks/useCardNavigation';
 import toast from 'react-hot-toast';
 
@@ -33,22 +31,16 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
   const [showReportModal, setShowReportModal] = useState(false);
   const [authAction, setAuthAction] = useState<'like' | 'save' | 'report' | null>(null);
   const [currentQuoteId, setCurrentQuoteId] = useState<string>('');
-  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   
   const { user } = useAuth();
-  const childRefs = useRef<any[]>([]);
 
   // Enhanced navigation with keyboard support
   const {
     currentIndex,
-    direction,
     canGoNext,
     canGoPrevious,
     goToNext,
     goToPrevious,
-    goToIndex,
-    undo,
-    canUndo,
   } = useCardNavigation({
     totalCards: quotes.length,
     initialIndex,
@@ -72,39 +64,6 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
   }, [quotes, currentIndex]);
 
   const currentQuote = quotes[currentIndex];
-
-  // Focus management
-  useEffect(() => {
-    const activeCard = document.querySelector(`[data-card-index="${currentIndex}"]`);
-    if (activeCard) {
-      (activeCard as HTMLElement).focus();
-    }
-  }, [currentIndex]);
-
-  const handleSwipe = useCallback((direction: string, index: number) => {
-    console.log(`Swiped ${direction} on card ${index}`);
-    setSwipeDirection(direction as 'left' | 'right');
-    
-    // Only handle swipe if it's the current active card
-    if (index === currentIndex) {
-      setTimeout(() => {
-        if (direction === 'left') {
-          goToPrevious();
-        } else if (direction === 'right') {
-          goToNext();
-        }
-        setSwipeDirection(null);
-      }, 100);
-    }
-  }, [currentIndex, goToNext, goToPrevious]);
-
-  const handleCardLeftScreen = useCallback((direction: string, index: number) => {
-    console.log(`Card ${index} left screen in direction: ${direction}`);
-  }, []);
-
-  const handleTap = useCallback(() => {
-    goToNext();
-  }, [goToNext]);
 
   const handlePlay = async () => {
     if (isPlaying || !currentQuote) return;
@@ -161,19 +120,6 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
     }
   };
 
-  // Programmatic swipe functions
-  const swipeLeft = () => {
-    if (childRefs.current[currentIndex]) {
-      childRefs.current[currentIndex].swipe('left');
-    }
-  };
-
-  const swipeRight = () => {
-    if (childRefs.current[currentIndex]) {
-      childRefs.current[currentIndex].swipe('right');
-    }
-  };
-
   if (!quotes.length) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -217,96 +163,102 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
         </div>
       </div>
 
-      {/* Navigation Controls */}
-      <div className="px-4 py-2">
-        <NavigationControls
-          currentIndex={currentIndex}
-          totalCards={quotes.length}
-          canGoNext={canGoNext}
-          canGoPrevious={canGoPrevious}
-          onNext={goToNext}
-          onPrevious={goToPrevious}
-          onUndo={undo}
-          showUndo={canUndo}
-        />
-      </div>
-
-      {/* Card Stack Container */}
+      {/* Card Container with Side Navigation */}
       <div className="flex-1 flex items-center justify-center p-6 relative">
+        {/* Left Navigation Button */}
+        <motion.button
+          onClick={goToPrevious}
+          disabled={!canGoPrevious}
+          className={`absolute left-4 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+            canGoPrevious 
+              ? 'bg-blue-500 text-white hover:bg-blue-600 hover:scale-110' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
+          whileTap={canGoPrevious ? { scale: 0.9 } : {}}
+          whileHover={canGoPrevious ? { scale: 1.1 } : {}}
+          aria-label="Previous quote"
+          tabIndex={0}
+        >
+          <ChevronLeft size={24} />
+        </motion.button>
+
+        {/* Quote Cards Stack */}
         <div className="relative w-full max-w-sm h-96">
           {visibleCards.map(({ quote, index }) => {
             const isActive = index === currentIndex;
             const stackPosition = index - currentIndex;
             
             return (
-              <TinderCard
+              <motion.div
                 key={`${quote.id}-${index}`}
-                ref={(el) => (childRefs.current[index] = el)}
-                onSwipe={(dir) => handleSwipe(dir, index)}
-                onCardLeftScreen={(dir) => handleCardLeftScreen(dir, index)}
-                preventSwipe={!isActive ? ['up', 'down', 'left', 'right'] : ['up', 'down']}
-                swipeThreshold={100}
-                className="absolute inset-0"
-                swipeRequirementType="position"
-                flickOnSwipe={true}
+                data-card-index={index}
+                className="absolute inset-0 w-full h-full bg-white rounded-3xl shadow-lg p-8 select-none focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                style={{
+                  zIndex: visibleCards.length - Math.abs(stackPosition),
+                }}
+                animate={{
+                  scale: 1 - Math.abs(stackPosition) * 0.05,
+                  y: stackPosition * 8,
+                  opacity: isActive ? 1 : 0.7 - Math.abs(stackPosition) * 0.2,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  duration: 0.3,
+                }}
+                tabIndex={isActive ? 0 : -1}
+                role="article"
+                aria-label={`Quote ${index + 1} of ${quotes.length}: ${quote.content} by ${quote.author}`}
               >
-                <motion.div
-                  data-card-index={index}
-                  className="w-full h-full bg-white rounded-3xl shadow-lg p-8 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  style={{
-                    zIndex: visibleCards.length - Math.abs(stackPosition),
-                    transform: `scale(${1 - Math.abs(stackPosition) * 0.05}) translateY(${stackPosition * 8}px)`,
-                    opacity: isActive ? 1 : 0.7 - Math.abs(stackPosition) * 0.2,
-                  }}
-                  animate={{
-                    scale: 1 - Math.abs(stackPosition) * 0.05,
-                    y: stackPosition * 8,
-                    opacity: isActive ? 1 : 0.7 - Math.abs(stackPosition) * 0.2,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                    duration: 0.3,
-                  }}
-                  whileHover={isActive ? { scale: 1.02 } : {}}
-                  whileTap={isActive ? { scale: 0.98 } : {}}
-                  onClick={isActive ? handleTap : undefined}
-                  tabIndex={isActive ? 0 : -1}
-                  role="button"
-                  aria-label={`Quote ${index + 1} of ${quotes.length}: ${quote.content} by ${quote.author}`}
-                >
-                  <div className="text-center space-y-6 h-full flex flex-col justify-center">
-                    <motion.p 
-                      className="text-2xl text-gray-800 font-lato italic leading-relaxed"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      "{quote.content}"
-                    </motion.p>
-                    
-                    <motion.p 
-                      className="text-lg text-gray-600 font-inter font-medium"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      — {quote.author}
-                    </motion.p>
-                  </div>
-
-                  {/* Swipe Indicators */}
-                  <div className={`absolute top-4 left-4 text-green-500 opacity-0 transform rotate-12 text-4xl font-bold pointer-events-none transition-all duration-200 ${swipeDirection === 'right' ? 'opacity-100 scale-110' : ''}`}>
-                    NEXT
-                  </div>
-                  <div className={`absolute top-4 right-4 text-blue-500 opacity-0 transform -rotate-12 text-4xl font-bold pointer-events-none transition-all duration-200 ${swipeDirection === 'left' ? 'opacity-100 scale-110' : ''}`}>
-                    PREV
-                  </div>
-                </motion.div>
-              </TinderCard>
+                <div className="text-center space-y-6 h-full flex flex-col justify-center">
+                  <motion.p 
+                    className="text-2xl text-gray-800 font-lato italic leading-relaxed"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    "{quote.content}"
+                  </motion.p>
+                  
+                  <motion.p 
+                    className="text-lg text-gray-600 font-inter font-medium"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    — {quote.author}
+                  </motion.p>
+                </div>
+              </motion.div>
             );
           })}
+        </div>
+
+        {/* Right Navigation Button */}
+        <motion.button
+          onClick={goToNext}
+          disabled={!canGoNext}
+          className={`absolute right-4 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+            canGoNext 
+              ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-110' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
+          whileTap={canGoNext ? { scale: 0.9 } : {}}
+          whileHover={canGoNext ? { scale: 1.1 } : {}}
+          aria-label="Next quote"
+          tabIndex={0}
+        >
+          <ChevronRight size={24} />
+        </motion.button>
+
+        {/* Card Indicator */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="flex items-center gap-2 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full shadow-md">
+            <span className="text-sm font-medium text-gray-600">
+              {currentIndex + 1} / {quotes.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -319,21 +271,6 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
       >
         {/* Primary Action Buttons */}
         <div className="flex justify-center gap-4 mb-6">
-          <motion.button
-            onClick={swipeLeft}
-            disabled={!canGoPrevious}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
-              canGoPrevious 
-                ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-            whileTap={canGoPrevious ? { scale: 0.9 } : {}}
-            whileHover={canGoPrevious ? { scale: 1.1 } : {}}
-            aria-label="Previous quote"
-          >
-            <span className="text-sm font-bold">←</span>
-          </motion.button>
-
           <motion.button
             onClick={() => requireAuth('like', currentQuote.id, () => onLike(currentQuote.id))}
             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
@@ -363,21 +300,6 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
             aria-label={isPlaying ? 'Playing quote' : 'Play quote'}
           >
             <Volume2 size={24} />
-          </motion.button>
-
-          <motion.button
-            onClick={swipeRight}
-            disabled={!canGoNext}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
-              canGoNext 
-                ? 'bg-green-500 text-white hover:bg-green-600' 
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-            whileTap={canGoNext ? { scale: 0.9 } : {}}
-            whileHover={canGoNext ? { scale: 1.1 } : {}}
-            aria-label="Next quote"
-          >
-            <span className="text-sm font-bold">→</span>
           </motion.button>
         </div>
 
@@ -432,7 +354,7 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
           transition={{ delay: 0.7 }}
         >
           <p className="text-xs text-gray-400">
-            Use arrow keys or swipe • Space/tap for next • Ctrl+U to undo
+            Use arrow keys for navigation
           </p>
         </motion.div>
       </motion.div>
