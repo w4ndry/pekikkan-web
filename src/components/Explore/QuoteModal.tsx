@@ -4,6 +4,7 @@ import { X, Heart, Bookmark, Flag, Volume2, User } from 'lucide-react';
 import { Quote } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthModal } from '../Auth/AuthModal';
+import { ReportModal } from '../Report/ReportModal';
 import { elevenLabsService } from '../../lib/elevenlabs';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   onReport,
 }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [authAction, setAuthAction] = useState<'like' | 'save' | 'report' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [localQuote, setLocalQuote] = useState<Quote | null>(null);
@@ -78,7 +80,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
           handleSave();
           break;
         case 'report':
-          handleReport();
+          setShowReportModal(true);
           break;
       }
       setAuthAction(null);
@@ -113,9 +115,14 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
     onSave?.(localQuote.id);
   };
 
-  const handleReport = () => {
-    if (!localQuote) return;
+  const handleReportClick = () => {
+    requireAuth('report', () => setShowReportModal(true));
+  };
+
+  const handleReportSubmit = () => {
     onReport?.(localQuote.id);
+    setShowReportModal(false);
+    toast.success('Report submitted successfully');
   };
 
   const handlePlay = async () => {
@@ -228,7 +235,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                         </motion.button>
 
                         <motion.button
-                          onClick={() => requireAuth('report', handleReport)}
+                          onClick={handleReportClick}
                           className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors text-sm min-[480px]:text-base"
                           whileTap={{ scale: 0.95 }}
                         >
@@ -262,6 +269,14 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
         }}
         mode="login"
         onSuccess={handleAuthSuccess}
+      />
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        quoteId={localQuote.id}
+        quoteContent={localQuote.content}
+        quoteAuthor={localQuote.author}
       />
     </>
   );

@@ -5,6 +5,7 @@ import { Quote } from '../../types';
 import { elevenLabsService } from '../../lib/elevenlabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthModal } from '../Auth/AuthModal';
+import { ReportModal } from '../Report/ReportModal';
 import toast from 'react-hot-toast';
 
 interface QuoteCardProps {
@@ -27,6 +28,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [authAction, setAuthAction] = useState<'like' | 'save' | 'report' | null>(null);
   const { user } = useAuth();
 
@@ -78,11 +80,21 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
           onSave(quote.id);
           break;
         case 'report':
-          onReport(quote.id);
+          setShowReportModal(true);
           break;
       }
       setAuthAction(null);
     }
+  };
+
+  const handleReportClick = () => {
+    requireAuth('report', () => setShowReportModal(true));
+  };
+
+  const handleReportSubmit = () => {
+    onReport(quote.id);
+    setShowReportModal(false);
+    toast.success('Report submitted successfully');
   };
 
   return (
@@ -180,7 +192,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
           </motion.button>
 
           <motion.button
-            onClick={() => requireAuth('report', () => onReport(quote.id))}
+            onClick={handleReportClick}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
             whileTap={{ scale: 0.95 }}
           >
@@ -206,6 +218,14 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
         }}
         mode="login"
         onSuccess={handleAuthSuccess}
+      />
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        quoteId={quote.id}
+        quoteContent={quote.content}
+        quoteAuthor={quote.author}
       />
     </div>
   );
