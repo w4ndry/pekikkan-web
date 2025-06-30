@@ -168,10 +168,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Clear any cached data or local storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Sign out from Supabase (this invalidates the session on the server)
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      toast.success('Signed out successfully!');
+      // Clear browser history to prevent back button access to protected pages
+      if (window.history.replaceState) {
+        window.history.replaceState(null, '', '/');
+      }
+      
+      // Show success message
+      toast.success('Successfully logged out!');
+      
+      // Redirect to home page after a brief delay
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+      
     } catch (error) {
       const authError = error as AuthError;
       toast.error(authError.message || 'Failed to sign out');

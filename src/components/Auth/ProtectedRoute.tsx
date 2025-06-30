@@ -1,5 +1,5 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -8,6 +8,27 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
+  // Prevent back button access after logout
+  useEffect(() => {
+    const handlePopState = () => {
+      if (!user) {
+        window.history.pushState(null, '', '/');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push current state to prevent back navigation
+    if (!user && location.pathname !== '/') {
+      window.history.pushState(null, '', location.pathname);
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [user, location.pathname]);
 
   if (loading) {
     return (
@@ -21,7 +42,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
