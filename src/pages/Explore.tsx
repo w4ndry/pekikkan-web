@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MobileLayout } from '../components/Layout/MobileLayout';
 import { BottomNavigation } from '../components/Layout/BottomNavigation';
@@ -8,10 +9,14 @@ import { PopularAuthorsSection } from '../components/Explore/PopularAuthorsSecti
 import { CategoriesSection } from '../components/Explore/CategoriesSection';
 import { SearchResults } from '../components/Explore/SearchResults';
 import { QuoteModal } from '../components/Explore/QuoteModal';
+import { MetaTags } from '../components/SEO/MetaTags';
+import { VirtualizedQuoteList } from '../components/Performance/VirtualizedQuoteList';
 import { useExplore, TrendingQuote, PopularAuthor, Category } from '../hooks/useExplore';
 import { useQuotes } from '../hooks/useQuotes';
+import { useSEO } from '../hooks/useSEO';
 import { Quote } from '../types';
 import { ArrowLeft } from 'lucide-react';
+import { analytics } from '../utils/analytics';
 
 type ViewMode = 'main' | 'search' | 'category' | 'author';
 
@@ -30,6 +35,7 @@ export const Explore: React.FC = () => {
   } = useExplore();
 
   const { likeQuote, saveQuote, reportQuote } = useQuotes();
+  const location = useLocation();
 
   const [viewMode, setViewMode] = useState<ViewMode>('main');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -39,14 +45,44 @@ export const Explore: React.FC = () => {
   const [currentAuthor, setCurrentAuthor] = useState<PopularAuthor | null>(null);
   const [categoryLoading, setCategoryLoading] = useState(false);
 
+  // SEO data based on current view
+  const seoData = useSEO(
+    selectedQuote || undefined,
+    currentAuthor?.author,
+    currentCategory?.name
+  );
+
+  useEffect(() => {
+    // Track page view
+    analytics.trackPageView(location.pathname, 'Explore - Discover Quotes');
+  }, [location.pathname]);
+
+  useEffect(() => {
+    // Track search queries
+    if (searchQuery && searchResults.length > 0) {
+      analytics.trackSearch(searchQuery, searchResults.length);
+    }
+  }, [searchQuery, searchResults.length]);
+
   const handleQuoteClick = (quote: Quote | TrendingQuote) => {
     setSelectedQuote(quote);
+    analytics.trackEvent({
+      action: 'view_quote_modal',
+      category: 'Quote Interaction',
+      label: `${quote.author} - ${quote.id}`,
+    });
   };
 
   const handleCategoryClick = async (category: Category) => {
     setCategoryLoading(true);
     setCurrentCategory(category);
     setViewMode('category');
+    
+    analytics.trackEvent({
+      action: 'view_category',
+      category: 'Navigation',
+      label: category.name,
+    });
     
     const quotes = await getQuotesByCategory(category);
     setCategoryQuotes(quotes);
@@ -57,6 +93,12 @@ export const Explore: React.FC = () => {
     setCategoryLoading(true);
     setCurrentAuthor(author);
     setViewMode('author');
+    
+    analytics.trackEvent({
+      action: 'view_author',
+      category: 'Navigation',
+      label: author.author,
+    });
     
     const quotes = await getQuotesByAuthor(author.author);
     setAuthorQuotes(quotes);
@@ -78,6 +120,33 @@ export const Explore: React.FC = () => {
       setViewMode('search');
     } else {
       setViewMode('main');
+    }
+  };
+
+  const handleLike = (id: string) => {
+    likeQuote(id);
+    const quote = selectedQuote || searchResults.find(q => q.id === id) || 
+                  categoryQuotes.find(q => q.id === id) || authorQuotes.find(q => q.id === id);
+    if (quote) {
+      analytics.trackQuoteInteraction('like', id, quote.author);
+    }
+  };
+
+  const handleSave = (id: string) => {
+    saveQuote(id);
+    const quote = selectedQuote || searchResults.find(q => q.id === id) || 
+                  categoryQuotes.find(q => q.id === id) || authorQuotes.find(q => q.id === id);
+    if (quote) {
+      analytics.trackQuoteInteraction('save', id, quote.author);
+    }
+  };
+
+  const handleReport = (id: string) => {
+    reportQuote(id);
+    const quote = selectedQuote || searchResults.find(q => q.id === id) || 
+                  categoryQuotes.find(q => q.id === id) || authorQuotes.find(q => q.id === id);
+    if (quote) {
+      analytics.trackQuoteInteraction('report', id, quote.author);
     }
   };
 
@@ -126,31 +195,11 @@ export const Explore: React.FC = () => {
                 <p className="text-gray-600">No quotes found in this category</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {categoryQuotes.map((quote, index) => (
-                  <motion.div
-                    key={quote.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleQuoteClick(quote)}
-                    className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  >
-                    <p className="text-gray-800 font-medium mb-3 leading-relaxed">
-                      "{quote.content}"
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 font-medium">
-                        — {quote.author}
-                      </span>
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <span>❤️ {quote.like_count}</span>
-                        <span>🔖 {quote.save_count}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <VirtualizedQuoteList
+                quotes={categoryQuotes}
+                height={600}
+                onQuoteClick={handleQuoteClick}
+              />
             )}
           </div>
         );
@@ -195,33 +244,11 @@ export const Explore: React.FC = () => {
                 <p className="text-gray-600">No quotes found by this author</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {authorQuotes.map((quote, index) => (
-                  <motion.div
-                    key={quote.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleQuoteClick(quote)}
-                    className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  >
-                    <p className="text-gray-800 font-medium mb-3 leading-relaxed">
-                      "{quote.content}"
-                    </p>
-                    <div className="flex items-center justify-between">
-                      {quote.user && (
-                        <span className="text-sm text-gray-500">
-                          Shared by @{quote.user.username}
-                        </span>
-                      )}
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <span>❤️ {quote.like_count}</span>
-                        <span>🔖 {quote.save_count}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <VirtualizedQuoteList
+                quotes={authorQuotes}
+                height={600}
+                onQuoteClick={handleQuoteClick}
+              />
             )}
           </div>
         );
@@ -251,37 +278,40 @@ export const Explore: React.FC = () => {
   };
 
   return (
-    <MobileLayout>
-      <div className="h-screen bg-gray-50">
-        <div className="p-4">
-          <div className="mb-6">
-            {viewMode === 'main' && (
-              <h1 className="text-2xl font-bold text-gray-800 font-inter mb-4">Explore</h1>
-            )}
+    <>
+      <MetaTags {...seoData} />
+      <MobileLayout>
+        <div className="h-screen bg-gray-50">
+          <div className="p-4">
+            <div className="mb-6">
+              {viewMode === 'main' && (
+                <h1 className="text-2xl font-bold text-gray-800 font-inter mb-4">Explore</h1>
+              )}
+              
+              <SearchBar
+                value={searchQuery}
+                onChange={handleSearchChange}
+                loading={searchLoading}
+              />
+            </div>
             
-            <SearchBar
-              value={searchQuery}
-              onChange={handleSearchChange}
-              loading={searchLoading}
-            />
-          </div>
-          
-          <div className="pb-24">
-            {renderContent()}
+            <div className="pb-24">
+              {renderContent()}
+            </div>
           </div>
         </div>
-      </div>
-      
-      <QuoteModal
-        quote={selectedQuote}
-        isOpen={!!selectedQuote}
-        onClose={() => setSelectedQuote(null)}
-        onLike={likeQuote}
-        onSave={saveQuote}
-        onReport={reportQuote}
-      />
-      
-      <BottomNavigation />
-    </MobileLayout>
+        
+        <QuoteModal
+          quote={selectedQuote}
+          isOpen={!!selectedQuote}
+          onClose={() => setSelectedQuote(null)}
+          onLike={handleLike}
+          onSave={handleSave}
+          onReport={handleReport}
+        />
+        
+        <BottomNavigation />
+      </MobileLayout>
+    </>
   );
 };

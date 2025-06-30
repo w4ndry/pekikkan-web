@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://pekikkan.com/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/private/
+Disallow: /_next/
+Disallow: /static/
+
+# Allow important pages
+Allow: /
+Allow: /explore
+Allow: /quote/*
+Allow: /author/*
+Allow: /category/*
+
+# Block search result pages with parameters
+Disallow: /*?*
+Allow: /explore?q=*

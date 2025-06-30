@@ -4,10 +4,62 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Preconnect to external domains for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.elevenlabs.io">
+    
+    <!-- Font loading with display swap for better performance -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <title>Pekikkan - Inspirational Quotes</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#6C63FF">
+    <meta name="msapplication-TileColor" content="#6C63FF">
+    
+    <!-- Basic SEO Meta Tags -->
+    <meta name="description" content="Discover, share, and save inspirational quotes from great minds. Join our community of quote lovers and find daily motivation.">
+    <meta name="keywords" content="inspirational quotes, motivation, wisdom, daily inspiration, famous quotes, life quotes">
+    <meta name="author" content="Pekikkan">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Pekikkan">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pekikkan">
+    
+    <!-- Performance hints -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//api.elevenlabs.io">
+    
+    <!-- Structured Data for Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Pekikkan",
+      "description": "Inspirational Quotes & Wisdom Community",
+      "url": "https://pekikkan.com",
+      "logo": "https://pekikkan.com/logo.png",
+      "sameAs": [
+        "https://twitter.com/pekikkan",
+        "https://facebook.com/pekikkan",
+        "https://instagram.com/pekikkan"
+      ]
+    }
+    </script>
+    
+    <title>Pekikkan - Inspirational Quotes & Wisdom</title>
   </head>
   <body>
     <div id="root"></div>
