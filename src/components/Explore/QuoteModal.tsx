@@ -27,7 +27,13 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authAction, setAuthAction] = useState<'like' | 'save' | 'report' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [localQuote, setLocalQuote] = useState<Quote | null>(null);
   const { user } = useAuth();
+
+  // Update local quote state when quote prop changes
+  useEffect(() => {
+    setLocalQuote(quote);
+  }, [quote]);
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -42,7 +48,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!quote) return null;
+  if (!localQuote) return null;
 
   const requireAuth = (action: 'like' | 'save' | 'report', callback: () => void) => {
     if (!user) {
@@ -54,20 +60,53 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   };
 
   const handleAuthSuccess = () => {
-    if (authAction && quote) {
+    if (authAction && localQuote) {
       switch (authAction) {
         case 'like':
-          onLike?.(quote.id);
+          handleLike();
           break;
         case 'save':
-          onSave?.(quote.id);
+          handleSave();
           break;
         case 'report':
-          onReport?.(quote.id);
+          handleReport();
           break;
       }
       setAuthAction(null);
     }
+  };
+
+  const handleLike = () => {
+    if (!localQuote) return;
+    
+    // Update local state immediately for responsive UI
+    setLocalQuote(prev => prev ? {
+      ...prev,
+      isLiked: !prev.isLiked,
+      like_count: prev.isLiked ? prev.like_count - 1 : prev.like_count + 1
+    } : null);
+    
+    // Call the parent handler
+    onLike?.(localQuote.id);
+  };
+
+  const handleSave = () => {
+    if (!localQuote) return;
+    
+    // Update local state immediately for responsive UI
+    setLocalQuote(prev => prev ? {
+      ...prev,
+      isSaved: !prev.isSaved,
+      save_count: prev.isSaved ? prev.save_count - 1 : prev.save_count + 1
+    } : null);
+    
+    // Call the parent handler
+    onSave?.(localQuote.id);
+  };
+
+  const handleReport = () => {
+    if (!localQuote) return;
+    onReport?.(localQuote.id);
   };
 
   const handlePlay = async () => {
@@ -75,7 +114,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
     
     try {
       setIsPlaying(true);
-      await elevenLabsService.playQuote(quote.content, quote.author);
+      await elevenLabsService.playQuote(localQuote.content, localQuote.author);
     } catch (error) {
       toast.error('Failed to play quote. Please check your API key.');
     } finally {
@@ -119,7 +158,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                     {/* Quote Content */}
                     <div className="text-center space-y-6 mt-4 pr-8">
                       <p className="text-lg min-[480px]:text-xl text-gray-800 font-lato italic leading-relaxed">
-                        "{quote.content}"
+                        "{localQuote.content}"
                       </p>
                       
                       <div className="flex items-center justify-center gap-2">
@@ -127,13 +166,13 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                           <User size={12} className="text-gray-600" />
                         </div>
                         <p className="text-base min-[480px]:text-lg text-gray-600 font-inter font-medium">
-                          — {quote.author}
+                          — {localQuote.author}
                         </p>
                       </div>
 
-                      {quote.user && (
+                      {localQuote.user && (
                         <p className="text-sm text-gray-500">
-                          Shared by @{quote.user.username}
+                          Shared by @{localQuote.user.username}
                         </p>
                       )}
                     </div>
@@ -143,13 +182,13 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                       {/* Primary Actions */}
                       <div className="flex justify-center gap-3 min-[480px]:gap-4 mb-6">
                         <motion.button
-                          onClick={() => requireAuth('like', () => onLike?.(quote.id))}
+                          onClick={() => requireAuth('like', handleLike)}
                           className={`w-12 h-12 min-[480px]:w-14 min-[480px]:h-14 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                            quote.isLiked ? 'bg-red-500 text-white' : 'bg-white text-red-500'
+                            localQuote.isLiked ? 'bg-red-500 text-white' : 'bg-white text-red-500'
                           }`}
                           whileTap={{ scale: 0.9 }}
                         >
-                          <Heart size={20} fill={quote.isLiked ? 'currentColor' : 'none'} />
+                          <Heart size={20} fill={localQuote.isLiked ? 'currentColor' : 'none'} />
                         </motion.button>
 
                         <motion.button
@@ -167,20 +206,20 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                       {/* Secondary Actions */}
                       <div className="flex flex-col min-[480px]:flex-row justify-center gap-3 min-[480px]:gap-4">
                         <motion.button
-                          onClick={() => requireAuth('save', () => onSave?.(quote.id))}
+                          onClick={() => requireAuth('save', handleSave)}
                           className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full transition-colors text-sm min-[480px]:text-base ${
-                            quote.isSaved ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                            localQuote.isSaved ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
                           }`}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <Bookmark size={14} fill={quote.isSaved ? 'currentColor' : 'none'} />
+                          <Bookmark size={14} fill={localQuote.isSaved ? 'currentColor' : 'none'} />
                           <span className="font-medium">
-                            {quote.isSaved ? 'Saved' : 'Save'}
+                            {localQuote.isSaved ? 'Saved' : 'Save'}
                           </span>
                         </motion.button>
 
                         <motion.button
-                          onClick={() => requireAuth('report', () => onReport?.(quote.id))}
+                          onClick={() => requireAuth('report', handleReport)}
                           className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors text-sm min-[480px]:text-base"
                           whileTap={{ scale: 0.95 }}
                         >
@@ -208,7 +247,10 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => {
+          setShowAuthModal(false);
+          setAuthAction(null);
+        }}
         mode="login"
         onSuccess={handleAuthSuccess}
       />
