@@ -68,8 +68,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd pekikkan-social-app
+   git clone https://github.com/w4ndry/pekikkan-web.git
+   cd pekikkan-web
    ```
 
 2. **Install dependencies**
@@ -302,9 +302,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact & Support
 
 - **Website**: [https://pekikkan.com](https://pekikkan.com)
-- **Documentation**: [Project Wiki](https://github.com/your-username/pekikkan/wiki)
-- **Issues**: [GitHub Issues](https://github.com/your-username/pekikkan/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/pekikkan/discussions)
+- **Repository**: [https://github.com/w4ndry/pekikkan-web](https://github.com/w4ndry/pekikkan-web)
+- **Issues**: [GitHub Issues](https://github.com/w4ndry/pekikkan-web/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/w4ndry/pekikkan-web/discussions)
 
 ## 🚀 Deployment
 
