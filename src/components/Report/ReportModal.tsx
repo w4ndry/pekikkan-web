@@ -334,7 +334,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                         ) : (
                           'Send Report'
                         )}
-                      </button>
+                      </motion.button>
                     </div>
                   </form>
                 )}
