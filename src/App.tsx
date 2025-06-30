@@ -11,6 +11,7 @@ import { Explore } from './pages/Explore';
 import { Post } from './pages/Post';
 import { Profile } from './pages/Profile';
 import { SitemapGenerator } from './components/SEO/SitemapGenerator';
+import { BoltBadge } from './components/Layout/BoltBadge';
 import { analytics } from './utils/analytics';
 
 function App() {
@@ -81,6 +82,7 @@ function App() {
               }}
             />
             <SitemapGenerator />
+            <BoltBadge />
           </div>
         </Router>
       </AuthProvider>
