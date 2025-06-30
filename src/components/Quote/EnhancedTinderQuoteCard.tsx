@@ -156,7 +156,7 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
   return (
     <div className="relative h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-white">
+      <div className="flex items-center justify-between p-4 bg-white mr-16">
         <h1 className="text-2xl font-bold text-gray-800 font-inter">Pekikkan</h1>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
