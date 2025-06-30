@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Bookmark, Flag, Volume2, User, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, Bookmark, Flag, Volume2, User, UserPlus, ChevronLeft, ChevronRight, VolumeX } from 'lucide-react';
 import { Quote } from '../../types';
 import { elevenLabsService } from '../../lib/elevenlabs';
 import { useAuth } from '../../contexts/AuthContext';
@@ -65,14 +65,25 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
 
   const currentQuote = quotes[currentIndex];
 
+  // Check if ElevenLabs is configured
+  const elevenLabsStatus = elevenLabsService.getStatus();
+
   const handlePlay = async () => {
     if (isPlaying || !currentQuote) return;
+    
+    if (!elevenLabsStatus.configured) {
+      toast.error('Text-to-speech is not available. Please configure your ElevenLabs API key.');
+      return;
+    }
     
     try {
       setIsPlaying(true);
       await elevenLabsService.playQuote(currentQuote.content, currentQuote.author);
+      toast.success('Quote played successfully!');
     } catch (error) {
-      toast.error('Failed to play quote. Please check your API key.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to play quote';
+      toast.error(errorMessage);
+      console.error('Error playing quote:', error);
     } finally {
       setIsPlaying(false);
     }
@@ -285,21 +296,36 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
 
           <motion.button
             onClick={handlePlay}
-            disabled={isPlaying}
+            disabled={isPlaying || !elevenLabsStatus.configured}
             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
-              isPlaying ? 'bg-primary/50' : 'bg-primary text-white hover:bg-primary/90'
+              !elevenLabsStatus.configured 
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : isPlaying 
+                  ? 'bg-primary/50' 
+                  : 'bg-primary text-white hover:bg-primary/90'
             }`}
-            whileTap={{ scale: 0.9 }}
-            whileHover={{ scale: 1.1 }}
+            whileTap={elevenLabsStatus.configured && !isPlaying ? { scale: 0.9 } : {}}
+            whileHover={elevenLabsStatus.configured && !isPlaying ? { scale: 1.1 } : {}}
             animate={{
               rotate: isPlaying ? 360 : 0,
             }}
             transition={{
               rotate: { duration: 2, repeat: isPlaying ? Infinity : 0, ease: "linear" }
             }}
-            aria-label={isPlaying ? 'Playing quote' : 'Play quote'}
+            aria-label={
+              !elevenLabsStatus.configured 
+                ? 'Text-to-speech not available' 
+                : isPlaying 
+                  ? 'Playing quote' 
+                  : 'Play quote'
+            }
+            title={!elevenLabsStatus.configured ? elevenLabsStatus.message : undefined}
           >
-            <Volume2 size={24} />
+            {!elevenLabsStatus.configured ? (
+              <VolumeX size={24} />
+            ) : (
+              <Volume2 size={24} />
+            )}
           </motion.button>
         </div>
 
@@ -342,6 +368,20 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
           >
             <p className="text-sm text-gray-500">
               Sign in to save quotes and interact with the community
+            </p>
+          </motion.div>
+        )}
+
+        {/* ElevenLabs Status */}
+        {!elevenLabsStatus.configured && (
+          <motion.div 
+            className="mt-4 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              💡 Add VITE_ELEVENLABS_API_KEY to enable text-to-speech
             </p>
           </motion.div>
         )}

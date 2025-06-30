@@ -6,7 +6,15 @@ export class ElevenLabsService {
     this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
   }
 
+  private isConfigured(): boolean {
+    return !!this.apiKey && this.apiKey.trim() !== '';
+  }
+
   async textToSpeech(text: string, voiceId: string = '21m00Tcm4TlvDq8ikWAM'): Promise<ArrayBuffer> {
+    if (!this.isConfigured()) {
+      throw new Error('ElevenLabs API key is not configured. Please add VITE_ELEVENLABS_API_KEY to your environment variables.');
+    }
+
     const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
@@ -25,13 +33,26 @@ export class ElevenLabsService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate speech');
+      if (response.status === 401) {
+        throw new Error('Invalid ElevenLabs API key. Please check your API key and try again.');
+      } else if (response.status === 429) {
+        throw new Error('ElevenLabs API rate limit exceeded. Please try again later.');
+      } else if (response.status === 402) {
+        throw new Error('ElevenLabs API quota exceeded. Please check your account balance.');
+      } else {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`ElevenLabs API error (${response.status}): ${errorText}`);
+      }
     }
 
     return response.arrayBuffer();
   }
 
   async playQuote(content: string, author: string): Promise<void> {
+    if (!this.isConfigured()) {
+      throw new Error('Text-to-speech is not available. ElevenLabs API key is not configured.');
+    }
+
     const text = `${content} - ${author}`;
     
     try {
@@ -40,16 +61,48 @@ export class ElevenLabsService {
       const audioUrl = URL.createObjectURL(audioBlob);
       
       const audio = new Audio(audioUrl);
-      await audio.play();
       
-      // Clean up URL after playing
-      audio.addEventListener('ended', () => {
-        URL.revokeObjectURL(audioUrl);
+      // Handle audio loading and playing
+      return new Promise((resolve, reject) => {
+        audio.addEventListener('loadeddata', () => {
+          audio.play()
+            .then(() => resolve())
+            .catch(reject);
+        });
+
+        audio.addEventListener('error', () => {
+          reject(new Error('Failed to load audio. Please try again.'));
+        });
+
+        audio.addEventListener('ended', () => {
+          URL.revokeObjectURL(audioUrl);
+          resolve();
+        });
+
+        // Clean up URL if there's an error
+        audio.addEventListener('error', () => {
+          URL.revokeObjectURL(audioUrl);
+        });
       });
     } catch (error) {
       console.error('Error playing quote:', error);
       throw error;
     }
+  }
+
+  // Check if the service is properly configured
+  getStatus(): { configured: boolean; message: string } {
+    if (!this.isConfigured()) {
+      return {
+        configured: false,
+        message: 'ElevenLabs API key is not configured. Add VITE_ELEVENLABS_API_KEY to your .env file.'
+      };
+    }
+
+    return {
+      configured: true,
+      message: 'ElevenLabs service is configured and ready.'
+    };
   }
 }
 
