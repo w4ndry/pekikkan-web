@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MobileLayout } from '../components/Layout/MobileLayout';
 import { BottomNavigation } from '../components/Layout/BottomNavigation';
 import { useAuth } from '../contexts/AuthContext';
+import { useProfile } from '../hooks/useProfile';
 import { User, Settings, LogOut, Heart, Bookmark, AlertTriangle } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { stats, loading } = useProfile();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -29,6 +31,15 @@ export const Profile: React.FC = () => {
     setShowLogoutConfirm(false);
   };
 
+  // Get user profile data from the users table or fallback to auth metadata
+  const getUserDisplayName = () => {
+    return user?.user_metadata?.full_name || 'User';
+  };
+
+  const getUserUsername = () => {
+    return user?.user_metadata?.username || user?.email?.split('@')[0] || 'username';
+  };
+
   return (
     <MobileLayout>
       <div className="h-screen pb-20">
@@ -43,23 +54,41 @@ export const Profile: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">
-                  {user?.user_metadata?.full_name || 'User'}
+                  {getUserDisplayName()}
                 </h2>
-                <p className="text-gray-600">@{user?.user_metadata?.username || 'username'}</p>
+                <p className="text-gray-600">@{getUserUsername()}</p>
               </div>
             </div>
             
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-gray-800">12</div>
+                <div className="text-2xl font-bold text-gray-800">
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-8 rounded mx-auto"></div>
+                  ) : (
+                    stats.quotesCount
+                  )}
+                </div>
                 <div className="text-sm text-gray-600">Quotes</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-800">156</div>
+                <div className="text-2xl font-bold text-gray-800">
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-8 rounded mx-auto"></div>
+                  ) : (
+                    stats.followersCount
+                  )}
+                </div>
                 <div className="text-sm text-gray-600">Followers</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-800">89</div>
+                <div className="text-2xl font-bold text-gray-800">
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-8 rounded mx-auto"></div>
+                  ) : (
+                    stats.followingCount
+                  )}
+                </div>
                 <div className="text-sm text-gray-600">Following</div>
               </div>
             </div>
@@ -68,19 +97,29 @@ export const Profile: React.FC = () => {
           {/* Menu Items */}
           <div className="space-y-3">
             <motion.div
-              className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm"
+              className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm"
               whileTap={{ scale: 0.98 }}
             >
-              <Heart className="text-red-500" size={24} />
-              <span className="text-gray-800 font-medium">Liked Quotes</span>
+              <div className="flex items-center gap-3">
+                <Heart className="text-red-500" size={24} />
+                <span className="text-gray-800 font-medium">Liked Quotes</span>
+              </div>
+              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                {loading ? '...' : stats.likedQuotes.length}
+              </span>
             </motion.div>
 
             <motion.div
-              className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm"
+              className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm"
               whileTap={{ scale: 0.98 }}
             >
-              <Bookmark className="text-primary" size={24} />
-              <span className="text-gray-800 font-medium">Saved Quotes</span>
+              <div className="flex items-center gap-3">
+                <Bookmark className="text-primary" size={24} />
+                <span className="text-gray-800 font-medium">Saved Quotes</span>
+              </div>
+              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                {loading ? '...' : stats.savedQuotes.length}
+              </span>
             </motion.div>
 
             <motion.div
