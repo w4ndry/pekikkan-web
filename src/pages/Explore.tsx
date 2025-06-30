@@ -1,53 +1,286 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { MobileLayout } from '../components/Layout/MobileLayout';
 import { BottomNavigation } from '../components/Layout/BottomNavigation';
-import { Search, TrendingUp, Users, BookOpen } from 'lucide-react';
+import { SearchBar } from '../components/Explore/SearchBar';
+import { TrendingSection } from '../components/Explore/TrendingSection';
+import { PopularAuthorsSection } from '../components/Explore/PopularAuthorsSection';
+import { CategoriesSection } from '../components/Explore/CategoriesSection';
+import { SearchResults } from '../components/Explore/SearchResults';
+import { QuoteModal } from '../components/Explore/QuoteModal';
+import { useExplore, TrendingQuote, PopularAuthor, Category } from '../hooks/useExplore';
+import { useQuotes } from '../hooks/useQuotes';
+import { Quote } from '../types';
+import { ArrowLeft } from 'lucide-react';
+
+type ViewMode = 'main' | 'search' | 'category' | 'author';
 
 export const Explore: React.FC = () => {
-  return (
-    <MobileLayout>
-      <div className="h-screen pb-20">
-        <div className="p-4">
-          <h1 className="text-2xl font-bold text-gray-800 font-inter mb-6">Explore</h1>
-          
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search quotes, authors..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+  const {
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    searchLoading,
+    trendingQuotes,
+    popularAuthors,
+    categories,
+    loading,
+    getQuotesByCategory,
+    getQuotesByAuthor,
+  } = useExplore();
+
+  const { likeQuote, saveQuote, reportQuote } = useQuotes();
+
+  const [viewMode, setViewMode] = useState<ViewMode>('main');
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [categoryQuotes, setCategoryQuotes] = useState<Quote[]>([]);
+  const [authorQuotes, setAuthorQuotes] = useState<Quote[]>([]);
+  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
+  const [currentAuthor, setCurrentAuthor] = useState<PopularAuthor | null>(null);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+
+  const handleQuoteClick = (quote: Quote | TrendingQuote) => {
+    setSelectedQuote(quote);
+  };
+
+  const handleCategoryClick = async (category: Category) => {
+    setCategoryLoading(true);
+    setCurrentCategory(category);
+    setViewMode('category');
+    
+    const quotes = await getQuotesByCategory(category);
+    setCategoryQuotes(quotes);
+    setCategoryLoading(false);
+  };
+
+  const handleAuthorClick = async (author: PopularAuthor) => {
+    setCategoryLoading(true);
+    setCurrentAuthor(author);
+    setViewMode('author');
+    
+    const quotes = await getQuotesByAuthor(author.author);
+    setAuthorQuotes(quotes);
+    setCategoryLoading(false);
+  };
+
+  const handleBackToMain = () => {
+    setViewMode('main');
+    setCurrentCategory(null);
+    setCurrentAuthor(null);
+    setCategoryQuotes([]);
+    setAuthorQuotes([]);
+    setSearchQuery('');
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      setViewMode('search');
+    } else {
+      setViewMode('main');
+    }
+  };
+
+  const renderContent = () => {
+    switch (viewMode) {
+      case 'search':
+        return (
+          <SearchResults
+            results={searchResults}
+            loading={searchLoading}
+            query={searchQuery}
+            onQuoteClick={handleQuoteClick}
+          />
+        );
+
+      case 'category':
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                onClick={handleBackToMain}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ArrowLeft size={20} className="text-gray-600" />
+              </button>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  {currentCategory?.icon} {currentCategory?.name}
+                </h2>
+                <p className="text-sm text-gray-600">{currentCategory?.description}</p>
+              </div>
+            </div>
+
+            {categoryLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg p-4 shadow-sm animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : categoryQuotes.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No quotes found in this category</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {categoryQuotes.map((quote, index) => (
+                  <motion.div
+                    key={quote.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => handleQuoteClick(quote)}
+                    className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <p className="text-gray-800 font-medium mb-3 leading-relaxed">
+                      "{quote.content}"
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 font-medium">
+                        — {quote.author}
+                      </span>
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span>❤️ {quote.like_count}</span>
+                        <span>🔖 {quote.save_count}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'author':
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                onClick={handleBackToMain}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ArrowLeft size={20} className="text-gray-600" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {currentAuthor?.author.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {currentAuthor?.author}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {currentAuthor?.quote_count} quotes • {currentAuthor?.total_likes} likes
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {categoryLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg p-4 shadow-sm animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : authorQuotes.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No quotes found by this author</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {authorQuotes.map((quote, index) => (
+                  <motion.div
+                    key={quote.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => handleQuoteClick(quote)}
+                    className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <p className="text-gray-800 font-medium mb-3 leading-relaxed">
+                      "{quote.content}"
+                    </p>
+                    <div className="flex items-center justify-between">
+                      {quote.user && (
+                        <span className="text-sm text-gray-500">
+                          Shared by @{quote.user.username}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span>❤️ {quote.like_count}</span>
+                        <span>🔖 {quote.save_count}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return (
+          <div className="space-y-8">
+            <TrendingSection
+              quotes={trendingQuotes}
+              loading={loading}
+              onQuoteClick={handleQuoteClick}
+            />
+            
+            <PopularAuthorsSection
+              authors={popularAuthors}
+              loading={loading}
+              onAuthorClick={handleAuthorClick}
+            />
+            
+            <CategoriesSection
+              categories={categories}
+              onCategoryClick={handleCategoryClick}
             />
           </div>
+        );
+    }
+  };
 
-          {/* Categories */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
-              <TrendingUp className="text-primary" size={24} />
-              <div>
-                <h3 className="font-semibold text-gray-800">Trending</h3>
-                <p className="text-sm text-gray-600">Most liked quotes today</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-500/10 to-green-500/5 rounded-lg">
-              <Users className="text-green-600" size={24} />
-              <div>
-                <h3 className="font-semibold text-gray-800">Popular Authors</h3>
-                <p className="text-sm text-gray-600">Most followed creators</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-orange-500/10 to-orange-500/5 rounded-lg">
-              <BookOpen className="text-orange-600" size={24} />
-              <div>
-                <h3 className="font-semibold text-gray-800">Categories</h3>
-                <p className="text-sm text-gray-600">Browse by topics</p>
-              </div>
-            </div>
+  return (
+    <MobileLayout>
+      <div className="h-screen pb-20 bg-gray-50">
+        <div className="p-4">
+          <div className="mb-6">
+            {viewMode === 'main' && (
+              <h1 className="text-2xl font-bold text-gray-800 font-inter mb-4">Explore</h1>
+            )}
+            
+            <SearchBar
+              value={searchQuery}
+              onChange={handleSearchChange}
+              loading={searchLoading}
+            />
+          </div>
+          
+          <div className="pb-4">
+            {renderContent()}
           </div>
         </div>
       </div>
+      
+      <QuoteModal
+        quote={selectedQuote}
+        isOpen={!!selectedQuote}
+        onClose={() => setSelectedQuote(null)}
+        onLike={likeQuote}
+        onSave={saveQuote}
+        onReport={reportQuote}
+      />
+      
       <BottomNavigation />
     </MobileLayout>
   );
