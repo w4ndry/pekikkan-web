@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Bookmark, Flag, Volume2, User, UserPlus, ChevronLeft, ChevronRight, VolumeX } from 'lucide-react';
 import { Quote } from '../../types';
 import { elevenLabsService } from '../../lib/elevenlabs';
@@ -31,8 +32,9 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
   const [showReportModal, setShowReportModal] = useState(false);
   const [authAction, setAuthAction] = useState<'like' | 'save' | 'report' | null>(null);
   const [currentQuoteId, setCurrentQuoteId] = useState<string>('');
-  
+
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Enhanced navigation with keyboard support
   const {
@@ -171,7 +173,7 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
             </button>
           ) : (
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => navigate('/profile')}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
             >
               <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center">
