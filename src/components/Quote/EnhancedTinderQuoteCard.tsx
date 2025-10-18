@@ -156,20 +156,19 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
   return (
     <div className="relative h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-white mr-16">
+      <div className="flex items-center justify-between p-4 bg-white">
         <h1 className="text-2xl font-bold text-gray-800 font-inter">Pekikkan</h1>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-            <User size={16} className="text-primary" />
-          </div>
-          <span className="text-sm text-gray-600 font-medium">
-            {currentQuote.user?.username || 'Anonymous'}
-          </span>
-          <button 
-            onClick={() => requireAuth('like', currentQuote.id, () => toast.success('Follow feature coming soon!'))}
-            className="text-primary hover:bg-primary/10 p-1 rounded-full transition-colors"
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
           >
-            <UserPlus size={20} />
+            <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center">
+              <User size={14} className="text-primary" />
+            </div>
+            <span className="text-sm text-gray-700 font-medium">
+              {user?.user_metadata?.username || 'Anonymous'}
+            </span>
           </button>
         </div>
       </div>
