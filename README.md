@@ -1,6 +1,5 @@
 # Pekikkan - Inspire the World Through Words
 
-[![Built with Bolt](https://img.shields.io/badge/Built%20with-Bolt-6C63FF?style=flat-square)](https://bolt.new)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
@@ -293,7 +292,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Acknowledgments
 
-- **Built with [Bolt](https://bolt.new)** - AI-powered development platform
 - **Powered by [Supabase](https://supabase.com)** - Open source Firebase alternative
 - **Voice by [ElevenLabs](https://elevenlabs.io)** - AI voice generation
 - **Icons by [Lucide](https://lucide.dev)** - Beautiful & consistent icons

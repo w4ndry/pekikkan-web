@@ -1,5 +1,4 @@
 import React from 'react';
-import { BoltBadge } from './BoltBadge';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -11,7 +10,6 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, className 
     <div className="flex justify-center min-h-screen bg-gray-100">
       <div className={`w-mobile max-w-mobile bg-white min-h-screen relative ${className}`}>
         {children}
-        <BoltBadge />
       </div>
     </div>
   );
