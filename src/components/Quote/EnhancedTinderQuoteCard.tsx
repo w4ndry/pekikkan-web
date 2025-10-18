@@ -159,17 +159,29 @@ export const EnhancedTinderQuoteCard: React.FC<EnhancedTinderQuoteCardProps> = (
       <div className="flex items-center justify-between p-4 bg-white">
         <h1 className="text-2xl font-bold text-gray-800 font-inter">Pekikkan</h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-          >
-            <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center">
-              <User size={14} className="text-primary" />
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {user?.user_metadata?.username || 'Anonymous'}
-            </span>
-          </button>
+          {!user ? (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+            >
+              <User size={16} className="text-white" />
+              <span className="text-sm font-medium">
+                Login
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center">
+                <User size={14} className="text-primary" />
+              </div>
+              <span className="text-sm text-gray-700 font-medium">
+                {user.user_metadata?.username || 'User'}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
